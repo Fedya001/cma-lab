@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <iomanip>
 #include <sstream>
 #include <vector>
@@ -48,7 +47,9 @@ class SquareMatrix {
 
 template<class M>
 SquareMatrix<M> operator*(const SquareMatrix<M>& lhs, const SquareMatrix<M>& rhs) {
-  assert(lhs.dim_ == rhs.dim_);
+  if (lhs.GetDim() != rhs.GetDim()) {
+    throw std::logic_error("Can't multiply incompatible matrices");
+  }
   std::vector<std::vector<M>> data;
   data.reserve(lhs.dim_);
 

@@ -1,7 +1,5 @@
 #include "square_matrix.h"
 
-#include <cassert>
-
 template<class T>
 SquareMatrix<T>::SquareMatrix(size_t dim)
     : dim_(dim),
@@ -43,19 +41,25 @@ SquareMatrix<T>& SquareMatrix<T>::operator*=(const SquareMatrix<T>& other) {
 
 template<class T>
 std::vector<T>& SquareMatrix<T>::operator[](size_t index) {
-  assert(index < dim_);
+  if (index >= data_.size()) {
+    throw std::out_of_range("Invalid index in operator[]");
+  }
   return data_[index];
 }
 
 template<class T>
 const std::vector<double>& SquareMatrix<T>::at(size_t index) const {
-  assert(index < dim_);
+  if (index >= data_.size()) {
+    throw std::out_of_range("Invalid index in operator[]");
+  }
   return data_.at(index);
 }
 
 template<class T>
 void SquareMatrix<T>::MultiplyRow(size_t row_index, T coefficient) {
-  assert(row_index < dim_);
+  if (row_index >= data_.size()) {
+    throw std::out_of_range("Invalid row index");
+  }
   auto& row = data_[row_index];
   for (T& element : row) {
     element *= coefficient;
@@ -64,7 +68,9 @@ void SquareMatrix<T>::MultiplyRow(size_t row_index, T coefficient) {
 
 template<class T>
 void SquareMatrix<T>::MultiplyColumn(size_t column_index, T coefficient) {
-  assert(column_index < dim_);
+  if (column_index >= data_.size()) {
+    throw std::out_of_range("Invalid column index");
+  }
   for (size_t row_index = 0; row_index < dim_; ++row_index) {
     data_[row_index][column_index] *= coefficient;
   }
@@ -98,9 +104,12 @@ size_t SquareMatrix<T>::GetDim() const {
 template<class T>
 void SquareMatrix<T>::EnsureMatrixStructure() {
   for (const auto& row : data_) {
-    assert(row.size() == dim_);
+    if (row.size() != dim_) {
+      throw std::invalid_argument("Invalid matrix structure");
+    }
   }
 }
 
 // explicit instantiation of template
-template class SquareMatrix<double>;
+template
+class SquareMatrix<double>;
