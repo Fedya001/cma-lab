@@ -41,7 +41,7 @@ void PrintColumn(std::ostream& out, const std::vector<M>& column,
       << (latex_syntax_on ? "\\left(\\begin{array}{c}\n" : "{\n");
 
   PrintVector(out, column, (latex_syntax_on ? " \\\\\n" : "\n"));
-  out << (latex_syntax_on ? "\\end{array}\\right)" : "}");
+  out << (latex_syntax_on ? "\n\\end{array}\\right)" : "\n}");
 }
 
 template<class M>

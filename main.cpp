@@ -11,7 +11,7 @@ int main() {
                                   {4, 5, 4}
                               });
 
-  auto result = SquareMatrixManager(matrix).PerformDLU();
+  auto result = SquareMatrixManager(matrix).PerformDLU(true);
   PrintMatrix(std::cout, result.low_up, false);
   std::cout << std::endl;
   PrintColumn(std::cout, result.rows_permutations, false);

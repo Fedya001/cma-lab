@@ -80,13 +80,15 @@ typename SquareMatrixManager<T>::DLUDecomposition SquareMatrixManager<T>::Perfor
       }
 
       if (max_index != iteration) {
-        // perform swap
         swaps.emplace_back(max_index, iteration);
-        low_up.SwapRows(iteration, max_index);
+        low_up.SwapRows(max_index, iteration, iteration);
+        if (iteration > 0) {
+          std::swap(low_up[max_index][iteration - 1], low_up[iteration][iteration - 1]);
+        }
       }
     }
 
-    // base element must be non-zero non-zero
+    // base element must be non-zero
     if (matrix_.at(iteration).at(iteration) == 0) {
       std::string message = "Unable to perform DLU decomposition.";
       if (!swap_rows) {
@@ -109,11 +111,11 @@ typename SquareMatrixManager<T>::DLUDecomposition SquareMatrixManager<T>::Perfor
     }
   }
 
-  std::vector<size_t> rows_permutations;
+  std::vector<size_t> rows_permutations(dim);
   std::iota(rows_permutations.begin(), rows_permutations.end(), 1);
 
-  std::reverse(rows_permutations.begin(), rows_permutations.end());
-  for (const auto& [lhs, rhs] : swaps) {
+  std::reverse(swaps.begin(), swaps.end());
+  for (const auto&[lhs, rhs] : swaps) {
     std::swap(rows_permutations[lhs], rows_permutations[rhs]);
   }
 
