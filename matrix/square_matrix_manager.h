@@ -1,7 +1,43 @@
-#include "square_matrix_manager.h"
+#pragma once
+
+#include "square_matrix.h"
 
 #include <algorithm>
 #include <numeric>
+
+template<class T>
+class SquareMatrixManager {
+ public:
+  enum class MatrixType {
+    UPPER_DIAGONAL,
+    LOWER_DIAGONAL,
+    DIAGONAL,
+    ORDINARY
+  };
+
+  // inner classes representing decompositions
+  struct LDLTDecomposition {
+    std::vector<bool> diagonal;
+    SquareMatrix<T> low;
+  };
+
+  struct DLUDecomposition {
+    std::vector<size_t> rows_permutations;
+    SquareMatrix<T> low_up;
+  };
+
+  explicit SquareMatrixManager(SquareMatrix<T> matrix);
+
+  SquareMatrix<T> GetMatrix() const;
+  void SetMatrix(const SquareMatrix<T>& matrix);
+
+  LDLTDecomposition PerformLDLT() const;
+  DLUDecomposition PerformDLU(bool swap_rows = false) const;
+  std::vector<T> SolveSystem(const std::vector<T>& result) const;
+
+ private:
+  SquareMatrix<T> matrix_;
+};
 
 template<class T>
 SquareMatrixManager<T>::SquareMatrixManager(SquareMatrix<T> matrix)
@@ -88,6 +124,3 @@ template<class T>
 std::vector<T> SquareMatrixManager<T>::SolveSystem(const std::vector<T>& result) const {
   return std::vector<T>(result);
 }
-
-// explicit instantiation of templates
-template class SquareMatrixManager<double>;

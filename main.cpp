@@ -1,5 +1,6 @@
 #include "square_matrix.h"
 #include "square_matrix_manager.h"
+#include "print_utils.h"
 
 #include <iostream>
 
@@ -11,7 +12,9 @@ int main() {
                               });
 
   auto result = SquareMatrixManager(matrix).PerformDLU();
-  PrintMatrix(std::cout, result.low_up, true);
+  PrintMatrix(std::cout, result.low_up, false);
+  std::cout << std::endl;
+  PrintColumn(std::cout, result.rows_permutations, false);
 
   return 0;
 }
