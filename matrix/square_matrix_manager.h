@@ -1,5 +1,6 @@
 #pragma once
 
+#include "decompositions.h"
 #include "square_matrix.h"
 
 #include <algorithm>
@@ -8,31 +9,13 @@
 template<class T>
 class SquareMatrixManager {
  public:
-  enum class MatrixType {
-    UPPER_DIAGONAL,
-    LOWER_DIAGONAL,
-    DIAGONAL,
-    ORDINARY
-  };
-
-  // inner classes representing decompositions
-  struct LDLTDecomposition {
-    std::vector<bool> diagonal;
-    SquareMatrix<T> low;
-  };
-
-  struct DLUDecomposition {
-    std::vector<size_t> rows_permutations;
-    SquareMatrix<T> low_up;
-  };
-
   explicit SquareMatrixManager(SquareMatrix<T> matrix);
 
   SquareMatrix<T> GetMatrix() const;
   void SetMatrix(const SquareMatrix<T>& matrix);
 
-  LDLTDecomposition PerformLDLT() const;
-  DLUDecomposition PerformDLU(bool swap_rows = false) const;
+  LDLTDecomposition<T> PerformLDLT() const;
+  DLUDecomposition<T> PerformDLU(bool swap_rows = false) const;
   std::vector<T> SolveSystem(const std::vector<T>& result) const;
 
  private:
@@ -54,7 +37,7 @@ void SquareMatrixManager<T>::SetMatrix(const SquareMatrix<T>& matrix) {
 }
 
 template<class T>
-typename SquareMatrixManager<T>::LDLTDecomposition SquareMatrixManager<T>::PerformLDLT() const {
+LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
   std::vector<bool> diagonal;
   SquareMatrix<T> matrix(5);
 
@@ -62,7 +45,7 @@ typename SquareMatrixManager<T>::LDLTDecomposition SquareMatrixManager<T>::Perfo
 }
 
 template<class T>
-typename SquareMatrixManager<T>::DLUDecomposition SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
+DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
   SquareMatrix<T> low_up = matrix_;
   std::vector<std::pair<size_t, size_t>> swaps;
 
