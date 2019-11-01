@@ -4,6 +4,7 @@
 #include "square_matrix.h"
 
 #include <algorithm>
+#include <math.h>
 #include <numeric>
 
 template<class T>
@@ -17,6 +18,8 @@ class SquareMatrixManager {
   LDLTDecomposition<T> PerformLDLT() const;
   DLUDecomposition<T> PerformDLU(bool swap_rows = false) const;
   std::vector<T> SolveSystem(const std::vector<T>& result) const;
+
+  void EnsureMatrixSymmetry() const;
 
  private:
   SquareMatrix<T> matrix_;
@@ -38,10 +41,53 @@ void SquareMatrixManager<T>::SetMatrix(const SquareMatrix<T>& matrix) {
 
 template<class T>
 LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
-  std::vector<bool> diagonal;
-  SquareMatrix<T> matrix(5);
+  EnsureMatrixSymmetry();
 
-  return {diagonal, matrix};
+  size_t dim = matrix_.GetDim();
+  std::vector<bool> diagonal(dim, true);
+  SquareMatrix<T> matrix = matrix_;
+
+  // We store the resulting matrix in transposed vector with necessary zeros.
+  // This operations take O(n^2) while the whole algorithm
+  // takes O(n^3 / 2) that is why there is no problem
+  std::vector<std::vector<T>> transposed;
+
+  for (size_t iteration = 0; iteration < dim; ++iteration) {
+    if (matrix_.at(iteration).at(iteration) == 0) {
+      throw std::logic_error("Unable to perform LDLT decomposition.");
+    }
+
+    for (size_t row = iteration + 1; row < dim; ++row) {
+      T coefficient = - matrix.at(iteration).at(row) / matrix.at(iteration).at(iteration);
+      for (size_t column = row; column < dim; ++column) {
+        matrix[row][column] += coefficient * matrix.at(iteration).at(column);
+      }
+    }
+
+    // Form a row of resulting matrix low
+    std::vector<T> row;
+    for (size_t index = 0; index <= iteration; ++index) {
+      row.push_back(matrix.at(index).at(iteration));
+    }
+    row.resize(dim, T());
+    transposed.push_back(row);
+  }
+
+  // Finish LDLT: Divide on square root
+  for (size_t column = 0; column < dim; ++column) {
+    int sign = 1;
+    if (transposed.at(column).at(column) < 0) {
+      sign = -1;
+      diagonal[column] = false;
+    }
+    T root = sqrt(sign * matrix.at(column).at(column));
+
+    for (size_t row = 0; row < dim; ++row) {
+      transposed[row][column] /= sign * root;
+    }
+  }
+
+  return {diagonal, SquareMatrix<T>(transposed)};
 }
 
 template<class T>
@@ -87,9 +133,9 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
     }
 
     // 2. Up matrix
-    for (size_t i = iteration + 1; i < dim; ++i) {
-      for (size_t j = iteration + 1; j < dim; ++j) {
-        low_up[i][j] -= low_up[iteration][j] * low_up[i][iteration];
+    for (size_t row = iteration + 1; row < dim; ++row) {
+      for (size_t column = iteration + 1; column < dim; ++column) {
+        low_up[row][column] -= low_up[iteration][column] * low_up[row][iteration];
       }
     }
   }
@@ -108,4 +154,16 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
 template<class T>
 std::vector<T> SquareMatrixManager<T>::SolveSystem(const std::vector<T>& result) const {
   return std::vector<T>(result);
+}
+
+template<class T>
+void SquareMatrixManager<T>::EnsureMatrixSymmetry() const {
+  size_t dim = matrix_.GetDim();
+  for (size_t row = 0; row < dim; ++row) {
+    for (size_t column = row + 1; column < dim; ++column) {
+      if (matrix_.at(row).at(column) != matrix_.at(row).at(column)) {
+        throw std::invalid_argument("Invalid matrix structure (symmetric matrix required)");
+      }
+    }
+  }
 }
