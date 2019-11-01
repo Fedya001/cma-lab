@@ -1,31 +1,46 @@
 #include "square_matrix.h"
 #include "square_matrix_manager.h"
 #include "print_utils.h"
-#include "validator.h"
+#include "validation.h"
 
 #include <iostream>
 
 int main() {
-  SquareMatrix<double> matrix({
+  SquareMatrix<double> matrixA({
                                   {4, 2, 1},
                                   {5, 10, 3},
                                   {4, 5, 4}
                               });
 
-  auto result = SquareMatrixManager(matrix).PerformDLU(true);
-  PrintMatrix(std::cout, result.low_up, false);
-  std::cout << std::endl;
-  PrintColumn(std::cout, result.rows_permutations, false);
+  auto decompositionA = SquareMatrixManager(matrixA).PerformDLU(true);
 
-  SquareMatrix<double> symmetric_matrix({
+  PrintMatrix(std::cout, decompositionA.low_up, false);
+  std::cout << std::endl;
+  PrintColumn(std::cout, decompositionA.rows_permutations, false);
+
+  SquareMatrix<double> matrixB({
                                             {4, 5, 7},
                                             {5, 1, 2},
                                             {7, 2, 10}
                                         });
-  auto decomposition = SquareMatrixManager(symmetric_matrix).PerformLDLT();
-  PrintMatrix(std::cout, decomposition.low, false, 4);
+  auto decompositionB = SquareMatrixManager(matrixB).PerformLDLT();
+  PrintMatrix(std::cout, decompositionB.low, false, 4);
   std::cout << std::endl;
-  PrintColumn(std::cout, decomposition.diagonal);
+  PrintColumn(std::cout, decompositionB.diagonal);
+  std::cout << std::endl;
+
+  try {
+    validation::ValidateDlU(decompositionA, matrixA);
+    validation::ValidateLDLT(decompositionB, matrixB);
+  } catch (std::runtime_error& error) {
+    std::cerr << error.what() << std::endl;
+  }
+
+  if (validation::TestAll<double>()) {
+    std::cerr << "All tests passed successfully\n";
+  } else {
+    std::cerr << "Some tests failed\n";
+  }
 
   return 0;
 }

@@ -7,3 +7,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 
 include_directories(matrix utils)
 add_executable(cma-lab main.cpp)
+target_link_libraries(cma-lab stdc++fs)

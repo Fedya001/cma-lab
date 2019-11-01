@@ -21,7 +21,7 @@ class SquareMatrix {
   SquareMatrix<T>& operator*=(const SquareMatrix<T>& other);
 
   [[nodiscard]] std::vector<T>& operator[](size_t index);
-  [[nodiscard]] const std::vector<double>& at(size_t index) const;
+  [[nodiscard]] const std::vector<T>& at(size_t index) const;
 
   void MultiplyRow(size_t row_index, T coefficient);
   void MultiplyColumn(size_t row_index, T coefficient);
@@ -93,7 +93,7 @@ std::vector<T>& SquareMatrix<T>::operator[](size_t index) {
 }
 
 template<class T>
-const std::vector<double>& SquareMatrix<T>::at(size_t index) const {
+const std::vector<T>& SquareMatrix<T>::at(size_t index) const {
   if (index >= data_.size()) {
     throw std::out_of_range("Invalid index in operator[]");
   }

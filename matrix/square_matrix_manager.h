@@ -141,7 +141,7 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
   }
 
   std::vector<size_t> rows_permutations(dim);
-  std::iota(rows_permutations.begin(), rows_permutations.end(), 1);
+  std::iota(rows_permutations.begin(), rows_permutations.end(), 0);
 
   std::reverse(swaps.begin(), swaps.end());
   for (const auto&[lhs, rhs] : swaps) {
