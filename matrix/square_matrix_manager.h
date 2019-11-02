@@ -53,7 +53,7 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
   std::vector<std::vector<T>> transposed;
 
   for (size_t iteration = 0; iteration < dim; ++iteration) {
-    if (matrix_.at(iteration).at(iteration) == 0) {
+    if (matrix.at(iteration).at(iteration) == 0) {
       throw std::logic_error("Unable to perform LDLT decomposition.");
     }
 
@@ -115,7 +115,7 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
     }
 
     // base element must be non-zero
-    if (matrix_.at(iteration).at(iteration) == 0) {
+    if (low_up.at(iteration).at(iteration) == 0) {
       std::string message = "Unable to perform DLU decomposition.";
       if (!swap_rows) {
         message += " Consider set swap_rows to true.";
