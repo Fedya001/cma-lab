@@ -86,7 +86,7 @@ bool TestAll() {
 
     // 3. // Random tests on DLU
     MatrixGenerator<T> matrix_generator(-1000, 1000);
-    for (size_t dim : {10, 20, 50, 200, 500}) {
+    for (size_t dim : {10, 20, 50, 100}) {
       auto matrix = matrix_generator.generate(dim);
       manager.SetMatrix(matrix);
       ValidateDlU(manager.PerformDLU(true), matrix);
