@@ -1,17 +1,14 @@
 #pragma once
 
-#include "square_matrix.h"
 #include "decompositions.h"
-#include "load_matrix.h"
+#include "load.h"
 #include "matrix_generator.h"
+#include "square_matrix.h"
 
 #include <cmath>
-#include <experimental/filesystem>
 #include <iostream>
 
 namespace validation {
-
-namespace filesystem = std::experimental::filesystem;
 
 template<class T>
 void ValidateDlU(const DLUDecomposition<T>& decomposition,
@@ -67,69 +64,36 @@ void ValidateLDLT(const LDLTDecomposition<T>& decomposition,
 }
 
 template<class T>
-bool TestMatrix(const SquareMatrix<T>& matrix) {
-  auto manager = SquareMatrixManager(matrix);
+bool TestAll() {
+  // Step out of a cmake-build-debug directory
+  const std::string dlu_directory("../data/tests/DLU");
+  const std::string ldlt_directory("../data/tests/LDLT");
+
+  auto manager = SquareMatrixManager(SquareMatrix<T>(0));
 
   try {
-    auto dlu = manager.PerformDLU(true);
-    auto ldlt = manager.PerformLDLT();
+    // 1. Test DLU
+    for (const auto& matrix : loader::LoadMatrices<T>(dlu_directory)) {
+      manager.SetMatrix(matrix);
+      ValidateDlU(manager.PerformDLU(true), matrix);
+    }
 
-    ValidateDlU(dlu, matrix);
-    ValidateLDLT(ldlt, matrix);
+    // 2. Test LDLT
+    for (const auto& matrix : loader::LoadMatrices<T>(ldlt_directory)) {
+      manager.SetMatrix(matrix);
+      ValidateLDLT(manager.PerformLDLT(), matrix);
+    }
+
+    // 3. // Random tests on DLU
+    MatrixGenerator<T> matrix_generator(-1000, 1000);
+    for (size_t dim : {10, 20, 50, 200, 500}) {
+      auto matrix = matrix_generator.generate(dim);
+      manager.SetMatrix(matrix);
+      ValidateDlU(manager.PerformDLU(true), matrix);
+    }
   } catch (std::exception& ex) {
     std::cerr << ex.what() << std::endl;
     return false;
-  }
-
-  return true;
-}
-
-template<class T>
-bool TestAll() {
-  // Step out of a cmake-build-debug directory
-  const std::string directory("../data/tests");
-
-  std::vector<std::string> test_files;
-  try {
-    if (filesystem::exists(directory) && filesystem::is_directory(directory)) {
-      filesystem::recursive_directory_iterator iter(directory);
-
-      // Iterate till end
-      while (iter != filesystem::recursive_directory_iterator()) {
-        if (filesystem::is_directory(iter->path())) {
-          // c++17 Filesystem API to skip current directory iteration
-          iter.disable_recursion_pending();
-        } else {
-          // Add the name in vector
-          test_files.push_back(iter->path().string());
-        }
-
-        std::error_code error;
-        iter.increment(error);
-        if (error) {
-          std::cerr << "Error While Accessing : " << iter->path().string()
-                    << " :: " << error.message() << '\n';
-        }
-      }
-    }
-  }
-  catch (std::system_error& e) {
-    std::cerr << e.what();
-  }
-
-  // Tests in data/tests
-  for (const auto& test_file : test_files) {
-    if (!TestMatrix(loader::LoadMatrix<T>(test_file))) {
-      return false;
-    }
-  }
-
-  // Random tests
-  MatrixGenerator<T> matrix_generator(-1000, 1000);
-  for (size_t dim : {10, 20, 50, 200, 500}) {
-    if (!TestMatrix(matrix_generator.generate(dim))) {
-      return false;
-    }
   }
 
   return true;
