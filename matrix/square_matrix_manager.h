@@ -110,10 +110,7 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
 
       if (max_index != iteration) {
         swaps.emplace_back(max_index, iteration);
-        low_up.SwapRows(max_index, iteration, iteration);
-        if (iteration > 0) {
-          std::swap(low_up[max_index][iteration - 1], low_up[iteration][iteration - 1]);
-        }
+        low_up.SwapRows(max_index, iteration);
       }
     }
 

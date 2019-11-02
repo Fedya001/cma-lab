@@ -26,8 +26,8 @@ class SquareMatrix {
   void MultiplyRow(size_t row_index, T coefficient);
   void MultiplyColumn(size_t row_index, T coefficient);
 
-  void SwapRows(size_t first_row, size_t second_row, size_t suffix = 0);
-  void SwapColumns(size_t first_column, size_t second_column, size_t suffix = 0);
+  void SwapRows(size_t first_row, size_t second_row);
+  void SwapColumns(size_t first_column, size_t second_column);
 
   [[nodiscard]] size_t GetDim() const;
 
@@ -122,27 +122,20 @@ void SquareMatrix<T>::MultiplyColumn(size_t column_index, T coefficient) {
 }
 
 template<class T>
-void SquareMatrix<T>::SwapRows(size_t first_row, size_t second_row, size_t suffix) {
-  if (suffix == 0) {
-    std::swap(data_[first_row], data_[second_row]);
-  } else {
-    for (size_t column_index = suffix; column_index < dim_; ++column_index) {
-      std::swap(data_[first_row][column_index], data_[second_row][column_index]);
-    }
-  }
+void SquareMatrix<T>::SwapRows(size_t first_row, size_t second_row) {
+  std::swap(data_[first_row], data_[second_row]);
 }
 
 template<class T>
-void SquareMatrix<T>::SwapColumns(size_t first_column, size_t second_column, size_t suffix) {
+void SquareMatrix<T>::SwapColumns(size_t first_column, size_t second_column) {
   std::vector<T> buffer;
   buffer.reserve(dim_);
-
-  for (size_t row_index = suffix; row_index < dim_; ++row_index) {
+  for (size_t row_index = 0; row_index <= dim_; ++row_index) {
     buffer.push_back(data_[row_index][first_column]);
     data_[row_index][first_column] = data_[row_index][second_column];
   }
 
-  for (size_t row_index = suffix; row_index < dim_; ++row_index) {
+  for (size_t row_index = 0; row_index < dim_; ++row_index) {
     data_[row_index][second_column] = buffer[row_index];
   }
 }
