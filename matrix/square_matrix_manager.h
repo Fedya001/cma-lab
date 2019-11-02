@@ -158,7 +158,7 @@ void SquareMatrixManager<T>::EnsureMatrixSymmetry() const {
   size_t dim = matrix_.GetDim();
   for (size_t row = 0; row < dim; ++row) {
     for (size_t column = row + 1; column < dim; ++column) {
-      if (matrix_.at(row).at(column) != matrix_.at(row).at(column)) {
+      if (matrix_.at(row).at(column) != matrix_.at(column).at(row)) {
         throw std::invalid_argument("Invalid matrix structure (symmetric matrix required)");
       }
     }

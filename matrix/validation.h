@@ -50,8 +50,13 @@ void ValidateLDLT(const LDLTDecomposition<T>& decomposition,
   for (size_t row = 0; row < dim; ++row) {
     for (size_t column = 0; column < dim; ++column) {
       T sum = T();
-      for (size_t index = 0; index < std::min(row, column); ++index) {
-        sum += decomposition.low.at(row).at(index) * decomposition.low.at(column).at(index);
+      for (size_t index = 0; index <= std::min(row, column); ++index) {
+        T product = decomposition.low.at(row).at(index) * decomposition.low.at(column).at(index);
+        if (decomposition.diagonal.at(index)) {
+          sum += product;
+        } else {
+          sum -= product;
+        }
       }
 
       if (std::abs(matrix.at(row).at(column) - sum) > epsilon) {
@@ -65,14 +70,14 @@ template<class T>
 bool TestMatrix(const SquareMatrix<T>& matrix) {
   auto manager = SquareMatrixManager(matrix);
 
-  auto dlu = manager.PerformDLU(true);
-  auto ldlt = manager.PerformLDLT();
-
   try {
+    auto dlu = manager.PerformDLU(true);
+    auto ldlt = manager.PerformLDLT();
+
     ValidateDlU(dlu, matrix);
     ValidateLDLT(ldlt, matrix);
-  } catch (std::runtime_error& ex) {
-    std::cerr << ex.what();
+  } catch (std::exception& ex) {
+    std::cerr << ex.what() << std::endl;
     return false;
   }
 
@@ -81,7 +86,8 @@ bool TestMatrix(const SquareMatrix<T>& matrix) {
 
 template<class T>
 bool TestAll() {
-  const std::string directory("data/tests");
+  // Step out of a cmake-build-debug directory
+  const std::string directory("../data/tests");
 
   std::vector<std::string> test_files;
   try {

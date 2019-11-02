@@ -32,7 +32,7 @@ int main() {
   try {
     validation::ValidateDlU(decompositionA, matrixA);
     validation::ValidateLDLT(decompositionB, matrixB);
-  } catch (std::runtime_error& error) {
+  } catch (std::exception& error) {
     std::cerr << error.what() << std::endl;
   }
 
