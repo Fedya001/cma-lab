@@ -26,13 +26,23 @@ class SquareMatrix {
   [[nodiscard]] const std::vector<T>& operator[](size_t index) const;
 
   void MultiplyRow(size_t row_index, T coefficient);
-  void MultiplyColumn(size_t row_index, T coefficient);
+  void MultiplyRow(size_t row_index, T coefficient, size_t begin, size_t end);
+  void MultiplyColumn(size_t column_index, T coefficient);
+  void MultiplyColumn(size_t column_index, T coefficient, size_t begin, size_t end);
+
+  void AddRowToOther(size_t target_row, size_t source_row, T coefficient);
+  void AddRowToOther(size_t target_row, size_t source_row, T coefficient,
+                     size_t begin, size_t end);
+  void AddColumnToOther(size_t target_column, size_t source_column, T coefficient);
+  void AddColumnToOther(size_t target_column, size_t source_column, T coefficient,
+                        size_t begin, size_t end);
 
   void SwapRows(size_t first_row, size_t second_row);
   void SwapRows(std::vector<size_t> permutation);
   void SwapColumns(size_t first_column, size_t second_column);
 
   [[nodiscard]] size_t GetDim() const;
+  bool IsEmpty() const;
 
   template<class M>
   friend SquareMatrix<M> operator*(const SquareMatrix<M>& lhs, const SquareMatrix<M>& rhs);
@@ -102,22 +112,92 @@ const std::vector<T>& SquareMatrix<T>::operator[](size_t index) const {
 
 template<class T>
 void SquareMatrix<T>::MultiplyRow(size_t row_index, T coefficient) {
+  if (!IsEmpty()) {
+    MultiplyRow(row_index, coefficient, 0, dim_ - 1);
+  }
+}
+
+template<class T>
+void SquareMatrix<T>::MultiplyRow(size_t row_index, T coefficient, size_t begin, size_t end) {
+  if (begin >= dim_ || end >= dim_) {
+    throw std::out_of_range("Invalid multiply row range");
+  }
+
   if (row_index >= data_.size()) {
     throw std::out_of_range("Invalid row index");
   }
+
   auto& row = data_[row_index];
-  for (T& element : row) {
-    element *= coefficient;
+  for (size_t index = begin; index <= end; ++index) {
+    row[index] *= coefficient;
   }
 }
 
 template<class T>
 void SquareMatrix<T>::MultiplyColumn(size_t column_index, T coefficient) {
+  if (!IsEmpty()) {
+    MultiplyRow(column_index, coefficient, 0, dim_ - 1);
+  }
+}
+
+template<class T>
+void SquareMatrix<T>::MultiplyColumn(size_t column_index, T coefficient, size_t begin, size_t end) {
+  if (begin >= dim_ || end >= dim_) {
+    throw std::out_of_range("Invalid multiply column range");
+  }
+
   if (column_index >= data_.size()) {
     throw std::out_of_range("Invalid column index");
   }
-  for (size_t row_index = 0; row_index < dim_; ++row_index) {
+
+  for (size_t row_index = begin; row_index <= end; ++row_index) {
     data_[row_index][column_index] *= coefficient;
+  }
+}
+
+template<class T>
+void SquareMatrix<T>::AddRowToOther(size_t target_row, size_t source_row, T coefficient) {
+  if (!IsEmpty()) {
+    AddRowToOther(target_row, source_row, coefficient, 0, dim_ - 1);
+  }
+}
+
+template<class T>
+void SquareMatrix<T>::AddRowToOther(size_t target_row, size_t source_row, T coefficient,
+                                    size_t begin, size_t end) {
+  if (begin >= dim_ || end >= dim_) {
+    throw std::out_of_range("Invalid AddRowToOther() range");
+  }
+
+  if (target_row >= data_.size() || source_row >= data_.size()) {
+    throw std::out_of_range("AddRowToOther(): Invalid row index");
+  }
+
+  for (size_t index = begin; index <= end; ++index) {
+    data_[target_row][index] += coefficient * data_[source_row][index];
+  }
+}
+
+template<class T>
+void SquareMatrix<T>::AddColumnToOther(size_t target_column, size_t source_column, T coefficient) {
+  if (!IsEmpty()) {
+    AddColumnToOther(target_column, source_column, coefficient, 0, dim_ - 1);
+  }
+}
+
+template<class T>
+void SquareMatrix<T>::AddColumnToOther(size_t target_column, size_t source_column, T coefficient,
+                                       size_t begin, size_t end) {
+  if (begin >= dim_ || end >= dim_) {
+    throw std::out_of_range("Invalid AddColumnToOther() range");
+  }
+
+  if (target_column >= data_.size() || source_column >= data_.size()) {
+    throw std::out_of_range("AddColumnToOther(): Invalid column index");
+  }
+
+  for (size_t index = begin; index <= end; ++index) {
+    data_[index][target_column] += coefficient * data_[index][source_column];
   }
 }
 
@@ -191,6 +271,11 @@ void SquareMatrix<T>::SwapColumns(size_t first_column, size_t second_column) {
 template<class T>
 size_t SquareMatrix<T>::GetDim() const {
   return dim_;
+}
+
+template<class T>
+bool SquareMatrix<T>::IsEmpty() const {
+  return dim_ == 0;
 }
 
 template<class T>
