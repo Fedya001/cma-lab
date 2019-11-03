@@ -7,7 +7,7 @@ void PrintVector(std::ostream& out, const std::vector<M>& vector, const std::str
     if (!first) {
       out << separator;
     }
-    out << element;
+    out << +element;
     first = false;
   }
 }

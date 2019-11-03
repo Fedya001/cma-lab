@@ -2,7 +2,7 @@
 
 template<class T>
 struct LDLTDecomposition {
-  std::vector<bool> diagonal;
+  std::vector<int8_t> diagonal;
   SquareMatrix<T> low;
 };
 

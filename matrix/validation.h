@@ -48,12 +48,8 @@ void ValidateLDLT(const LDLTDecomposition<T>& decomposition,
     for (size_t column = 0; column < dim; ++column) {
       T sum = T();
       for (size_t index = 0; index <= std::min(row, column); ++index) {
-        T product = decomposition.low.at(row).at(index) * decomposition.low.at(column).at(index);
-        if (decomposition.diagonal.at(index)) {
-          sum += product;
-        } else {
-          sum -= product;
-        }
+        sum += decomposition.low.at(row).at(index) * decomposition.low.at(column).at(index)
+            * decomposition.diagonal.at(index);
       }
 
       if (std::abs(matrix.at(row).at(column) - sum) > epsilon) {
@@ -90,7 +86,7 @@ bool TestAll() {
       auto matrix = matrix_factory.CreateRandomMatrix(dim, false);
       manager.SetMatrix(matrix);
       ValidateDlU(manager.PerformDLU(true), matrix);
-      
+
       auto symmetric_matrix = matrix_factory.CreateRandomMatrix(dim, true);
       manager.SetMatrix(symmetric_matrix);
       ValidateLDLT(manager.PerformLDLT(), symmetric_matrix);

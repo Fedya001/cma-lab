@@ -44,7 +44,7 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
   EnsureMatrixSymmetry();
 
   size_t dim = matrix_.GetDim();
-  std::vector<bool> diagonal(dim, true);
+  std::vector<int8_t> diagonal(dim, 1);
   SquareMatrix<T> matrix = matrix_;
 
   // We store the resulting matrix in transposed vector with necessary zeros.
@@ -75,19 +75,17 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
 
   // Finish LDLT: Divide on square root
   for (size_t column = 0; column < dim; ++column) {
-    int sign = 1;
     if (transposed.at(column).at(column) < 0) {
-      sign = -1;
-      diagonal[column] = false;
+      diagonal.at(column) = -1;
     }
-    T root = sqrt(sign * matrix.at(column).at(column));
+    T root = sqrt(diagonal.at(column) * matrix.at(column).at(column));
 
     for (size_t row = 0; row < dim; ++row) {
-      transposed[row][column] /= sign * root;
+      transposed[row][column] /= diagonal.at(column) * root;
     }
   }
 
-  return {diagonal, SquareMatrix<T>(transposed)};
+  return {diagonal, SquareMatrix<T>(std::move(transposed))};
 }
 
 template<class T>
