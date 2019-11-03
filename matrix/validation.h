@@ -2,7 +2,7 @@
 
 #include "decompositions.h"
 #include "load.h"
-#include "matrix_generator.h"
+#include "matrix_factory.h"
 #include "square_matrix.h"
 
 #include <cmath>
@@ -84,12 +84,16 @@ bool TestAll() {
       ValidateLDLT(manager.PerformLDLT(), matrix);
     }
 
-    // 3. // Random tests on DLU
-    MatrixGenerator<T> matrix_generator(-1000, 1000);
+    // 3. // Random tests on DLU and LDLT
+    MatrixFactory<T> matrix_factory(-1000, 1000);
     for (size_t dim : {10, 20, 50, 100}) {
-      auto matrix = matrix_generator.generate(dim);
+      auto matrix = matrix_factory.CreateRandomMatrix(dim, false);
       manager.SetMatrix(matrix);
       ValidateDlU(manager.PerformDLU(true), matrix);
+      
+      auto symmetric_matrix = matrix_factory.CreateRandomMatrix(dim, true);
+      manager.SetMatrix(symmetric_matrix);
+      ValidateLDLT(manager.PerformLDLT(), symmetric_matrix);
     }
   } catch (std::exception& ex) {
     std::cerr << ex.what() << std::endl;
