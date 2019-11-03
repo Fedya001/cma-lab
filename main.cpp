@@ -42,5 +42,19 @@ int main() {
     std::cerr << "Some tests failed\n";
   }
 
+  // test permutations
+  matrixA.SwapRows({1, 2, 0});
+  PrintMatrix(std::cout, matrixA);
+
+  SquareMatrix<double> test({
+                                   {1, 1, 1, 1, 1},
+                                   {2, 2, 2, 2, 2},
+                                   {3, 3, 3, 3, 3},
+                                   {4, 4, 4, 4, 4},
+                                   {5, 5, 5, 5, 5}
+                               });
+  test.SwapRows({1, 0, 3, 4, 2});
+  PrintMatrix(std::cout, test);
+
   return 0;
 }

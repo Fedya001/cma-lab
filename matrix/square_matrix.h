@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
+#include <unordered_set>
+#include <unordered_map>
 
 template<class T>
 class SquareMatrix {
@@ -27,6 +29,7 @@ class SquareMatrix {
   void MultiplyColumn(size_t row_index, T coefficient);
 
   void SwapRows(size_t first_row, size_t second_row);
+  void SwapRows(std::vector<size_t> permutation);
   void SwapColumns(size_t first_column, size_t second_column);
 
   [[nodiscard]] size_t GetDim() const;
@@ -123,7 +126,55 @@ void SquareMatrix<T>::MultiplyColumn(size_t column_index, T coefficient) {
 
 template<class T>
 void SquareMatrix<T>::SwapRows(size_t first_row, size_t second_row) {
-  std::swap(data_[first_row], data_[second_row]);
+  // std::vector.swap() takes O(1) time
+  data_[first_row].swap(data_[second_row]);
+}
+
+template<class T>
+void SquareMatrix<T>::SwapRows(std::vector<size_t> permutation) {
+  // Empty permutation
+  if (permutation.empty()) {
+    return;
+  }
+
+  // Validate the permutation
+  const std::string invalid_permutation_message = "Wrong permutation. ";
+  if (permutation.size() != dim_) {
+    throw std::invalid_argument(invalid_permutation_message +
+        "Matrix dimension and permutation length don't match");
+  }
+  std::unordered_map<size_t, size_t> index_of(dim_);
+  for (size_t index = 0; index < permutation.size(); ++index) {
+    if (index_of.count(permutation.at(index))) {
+      throw std::invalid_argument(invalid_permutation_message);
+    }
+    index_of[permutation.at(index)] = index;
+  }
+
+  if (index_of.size() != dim_) {
+    throw std::invalid_argument(invalid_permutation_message);
+  }
+
+  // Smart in-place swaps
+  // O(n) time, O(1) memory
+  std::unordered_set<size_t> indices_left(permutation.begin(), permutation.end());
+  size_t insert_index = 0;
+  for (size_t operation = 0; operation < dim_; ++operation) {
+    if (insert_index != permutation[insert_index]) {
+      // Constant complexity swap
+      data_[insert_index].swap(data_[permutation[insert_index]]);
+
+      // Recover permutation invariance
+      permutation[index_of.at(insert_index)] = permutation.at(insert_index);
+      index_of[permutation.at(insert_index)] = index_of.at(insert_index);
+      insert_index = permutation[insert_index];
+      indices_left.erase(insert_index);
+    } else {
+      // Pull new index
+      insert_index = *indices_left.begin();
+      indices_left.erase(indices_left.begin());
+    }
+  }
 }
 
 template<class T>
