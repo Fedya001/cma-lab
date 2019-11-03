@@ -18,21 +18,21 @@ void ValidateDlU(const DLUDecomposition<T>& decomposition,
 
   std::vector<size_t> inverse_permutation(dim);
   for (size_t index = 0; index < dim; ++index) {
-    inverse_permutation[decomposition.rows_permutations.at(index)] = index;
+    inverse_permutation[decomposition.rows_permutations[index]] = index;
   }
 
   for (size_t row = 0; row < dim; ++row) {
     for (size_t column = 0; column < dim; ++column) {
       T sum = T();
       for (size_t index = 0; index <= std::min(row, column); ++index) {
-        auto low_element = decomposition.low_up.at(row).at(index);
+        auto low_element = decomposition.low_up[row][index];
         if (index == row) {
           low_element = 1;
         }
-        sum += low_element * decomposition.low_up.at(index).at(column);
+        sum += low_element * decomposition.low_up[index][column];
       }
 
-      if (std::abs(matrix.at(inverse_permutation.at(row)).at(column) - sum) > epsilon) {
+      if (std::abs(matrix[inverse_permutation[row]][column] - sum) > epsilon) {
         throw std::runtime_error("Invalid DLU decomposition\n");
       }
     }
@@ -48,11 +48,11 @@ void ValidateLDLT(const LDLTDecomposition<T>& decomposition,
     for (size_t column = 0; column < dim; ++column) {
       T sum = T();
       for (size_t index = 0; index <= std::min(row, column); ++index) {
-        sum += decomposition.low.at(row).at(index) * decomposition.low.at(column).at(index)
-            * decomposition.diagonal.at(index);
+        sum += decomposition.low[row][index] * decomposition.low[column][index]
+            * decomposition.diagonal[index];
       }
 
-      if (std::abs(matrix.at(row).at(column) - sum) > epsilon) {
+      if (std::abs(matrix[row][column] - sum) > epsilon) {
         throw std::runtime_error("Invalid LDLT decomposition\n");
       }
     }

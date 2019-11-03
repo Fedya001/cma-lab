@@ -23,7 +23,7 @@ class SquareMatrix {
   SquareMatrix<T>& operator*=(const SquareMatrix<T>& other);
 
   [[nodiscard]] std::vector<T>& operator[](size_t index);
-  [[nodiscard]] const std::vector<T>& at(size_t index) const;
+  [[nodiscard]] const std::vector<T>& operator[](size_t index) const;
 
   void MultiplyRow(size_t row_index, T coefficient);
   void MultiplyColumn(size_t row_index, T coefficient);
@@ -96,11 +96,8 @@ std::vector<T>& SquareMatrix<T>::operator[](size_t index) {
 }
 
 template<class T>
-const std::vector<T>& SquareMatrix<T>::at(size_t index) const {
-  if (index >= data_.size()) {
-    throw std::out_of_range("Invalid index in operator[]");
-  }
-  return data_.at(index);
+const std::vector<T>& SquareMatrix<T>::operator[](size_t index) const {
+  return data_[index];
 }
 
 template<class T>
@@ -145,10 +142,10 @@ void SquareMatrix<T>::SwapRows(std::vector<size_t> permutation) {
   }
   std::unordered_map<size_t, size_t> index_of(dim_);
   for (size_t index = 0; index < permutation.size(); ++index) {
-    if (index_of.count(permutation.at(index))) {
+    if (index_of.count(permutation[index])) {
       throw std::invalid_argument(invalid_permutation_message);
     }
-    index_of[permutation.at(index)] = index;
+    index_of[permutation[index]] = index;
   }
 
   if (index_of.size() != dim_) {
@@ -165,8 +162,8 @@ void SquareMatrix<T>::SwapRows(std::vector<size_t> permutation) {
       data_[insert_index].swap(data_[permutation[insert_index]]);
 
       // Recover permutation invariance
-      permutation[index_of.at(insert_index)] = permutation.at(insert_index);
-      index_of[permutation.at(insert_index)] = index_of.at(insert_index);
+      permutation[index_of.at(insert_index)] = permutation[insert_index];
+      index_of[permutation[insert_index]] = index_of.at(insert_index);
       insert_index = permutation[insert_index];
       indices_left.erase(insert_index);
     } else {
@@ -219,7 +216,7 @@ SquareMatrix<M> operator*(const SquareMatrix<M>& lhs, const SquareMatrix<M>& rhs
     for (size_t column = 0; column < rhs.dim_; ++column) {
       M sum = M();
       for (size_t index = 0; index < lhs.dim_; ++index) {
-        sum += lhs.at(row).at(index) * rhs.at(index).at(column);
+        sum += lhs[row][index] * rhs[index][column];
       }
       line.push_back(sum);
     }

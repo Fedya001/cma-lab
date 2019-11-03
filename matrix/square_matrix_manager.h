@@ -4,7 +4,7 @@
 #include "square_matrix.h"
 
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 #include <numeric>
 
 template<class T>
@@ -53,21 +53,21 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
   std::vector<std::vector<T>> transposed;
 
   for (size_t iteration = 0; iteration < dim; ++iteration) {
-    if (matrix.at(iteration).at(iteration) == 0) {
+    if (matrix[iteration][iteration] == 0) {
       throw std::logic_error("Unable to perform LDLT decomposition.");
     }
 
     for (size_t row = iteration + 1; row < dim; ++row) {
-      T coefficient = - matrix.at(iteration).at(row) / matrix.at(iteration).at(iteration);
+      T coefficient = - matrix[iteration][row] / matrix[iteration][iteration];
       for (size_t column = row; column < dim; ++column) {
-        matrix[row][column] += coefficient * matrix.at(iteration).at(column);
+        matrix[row][column] += coefficient * matrix[iteration][column];
       }
     }
 
     // Form a row of resulting matrix low
     std::vector<T> row;
     for (size_t index = 0; index <= iteration; ++index) {
-      row.push_back(matrix.at(index).at(iteration));
+      row.push_back(matrix[index][iteration]);
     }
     row.resize(dim, T());
     transposed.push_back(row);
@@ -75,13 +75,13 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
 
   // Finish LDLT: Divide on square root
   for (size_t column = 0; column < dim; ++column) {
-    if (transposed.at(column).at(column) < 0) {
-      diagonal.at(column) = -1;
+    if (transposed[column][column] < 0) {
+      diagonal[column] = -1;
     }
-    T root = sqrt(diagonal.at(column) * matrix.at(column).at(column));
+    T root = sqrt(diagonal[column] * matrix[column][column]);
 
     for (size_t row = 0; row < dim; ++row) {
-      transposed[row][column] /= diagonal.at(column) * root;
+      transposed[row][column] /= diagonal[column] * root;
     }
   }
 
@@ -101,7 +101,7 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
     if (swap_rows) {
       // Search for max element
       for (size_t index = iteration + 1; index < dim; ++index) {
-        if (std::abs(low_up.at(max_index).at(iteration)) < std::abs(low_up.at(index).at(iteration))) {
+        if (std::abs(low_up[max_index][iteration]) < std::abs(low_up[index][iteration])) {
           max_index = index;
         }
       }
@@ -113,7 +113,7 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
     }
 
     // base element must be non-zero
-    if (low_up.at(iteration).at(iteration) == 0) {
+    if (low_up[iteration][iteration] == 0) {
       std::string message = "Unable to perform DLU decomposition.";
       if (!swap_rows) {
         message += " Consider set swap_rows to true.";
@@ -156,7 +156,7 @@ void SquareMatrixManager<T>::EnsureMatrixSymmetry() const {
   size_t dim = matrix_.GetDim();
   for (size_t row = 0; row < dim; ++row) {
     for (size_t column = row + 1; column < dim; ++column) {
-      if (matrix_.at(row).at(column) != matrix_.at(column).at(row)) {
+      if (matrix_[row][column] != matrix_[column][row]) {
         throw std::invalid_argument("Invalid matrix structure (symmetric matrix required)");
       }
     }
