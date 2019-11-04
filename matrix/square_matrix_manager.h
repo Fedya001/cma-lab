@@ -8,10 +8,19 @@
 #include <cmath>
 #include <iostream>
 #include <numeric>
+#include <functional>
 
 template<class T>
 class SquareMatrixManager {
  public:
+  enum class MatrixType {
+    UPPER_TRIANGULAR,
+    LOWER_TRIANGULAR,
+    LOWDIAG,
+    SYMMETRIC,
+    ORDINARY
+  };
+
   explicit SquareMatrixManager(SquareMatrix<T> matrix);
 
   SquareMatrix<T> GetMatrix() const;
@@ -28,9 +37,8 @@ class SquareMatrixManager {
  private:
   SquareMatrix<T> matrix_;
 
-  void EnsureMatrixSymmetry() const;
-  void EnsureLowdiagStructure() const;
-};
+  void EnsureMatrixType(MatrixType matrix_type) const;
+ };
 
 template<class T>
 SquareMatrixManager<T>::SquareMatrixManager(SquareMatrix<T> matrix)
@@ -48,7 +56,7 @@ void SquareMatrixManager<T>::SetMatrix(const SquareMatrix<T>& matrix) {
 
 template<class T>
 LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
-  EnsureMatrixSymmetry();
+  EnsureMatrixType(MatrixType::SYMMETRIC);
 
   size_t dim = matrix_.GetDim();
   std::vector<int8_t> diagonal(dim, 1);
@@ -154,7 +162,7 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
 
 template<class T>
 SquareMatrix<T> SquareMatrixManager<T>::InverseLowdiag(bool swap_rows) const {
-  EnsureLowdiagStructure();
+  EnsureMatrixType(MatrixType::LOWDIAG);
   size_t dim = matrix_.GetDim();
 
   SquareMatrix<T> left_matrix = matrix_;
@@ -214,24 +222,36 @@ std::vector<T> SquareMatrixManager<T>::SolveSystem(const std::vector<T>& result)
 }
 
 template<class T>
-void SquareMatrixManager<T>::EnsureMatrixSymmetry() const {
-  size_t dim = matrix_.GetDim();
-  for (size_t row = 0; row < dim; ++row) {
-    for (size_t column = row + 1; column < dim; ++column) {
-      if (matrix_[row][column] != matrix_[column][row]) {
-        throw std::invalid_argument("Invalid matrix structure (symmetric matrix required)");
-      }
-    }
-  }
-}
+void SquareMatrixManager<T>::EnsureMatrixType(MatrixType matrix_type) const {
+  std::function<bool(size_t, size_t)> validate_function;
+  std::string message;
 
-template<class T>
-void SquareMatrixManager<T>::EnsureLowdiagStructure() const {
+  switch (matrix_type) {
+    case MatrixType::SYMMETRIC:
+      validate_function = [this](size_t i, size_t j) {return matrix_[i][j] == matrix_[j][i];};
+      message = "Invalid matrix structure (symmetric matrix required)";
+      break;
+    case MatrixType::UPPER_TRIANGULAR:
+      validate_function = [this](size_t i, size_t j) {return j >= i || matrix_[i][j] == 0;};
+      message = "Invalid matrix structure (upper triangular matrix required)";
+      break;
+    case MatrixType::LOWER_TRIANGULAR:
+      validate_function = [this](size_t i, size_t j) {return i >= j || matrix_[i][j] == 0;};
+      message = "Invalid matrix structure (lower triangular matrix required)";
+      break;
+    case MatrixType::LOWDIAG:
+      validate_function = [this](size_t i, size_t j) {return i + 1 >= j || matrix_[i][j] == 0;};
+      message = "Invalid matrix structure (lowdiag matrix required)";
+      break;
+    default:
+      return;
+  }
+
   size_t dim = matrix_.GetDim();
   for (size_t row = 0; row < dim; ++row) {
-    for (size_t column = row + 2; column < dim; ++column) {
-      if (matrix_[row][column] != 0) {
-        throw std::invalid_argument("Invalid matrix structure (lowdiag matrix required)");
+    for (size_t column = 0; column < dim; ++column) {
+      if (!validate_function(row, column)) {
+        throw std::invalid_argument(message);
       }
     }
   }
