@@ -28,6 +28,7 @@ class MatrixFactory {
                              (std::chrono::system_clock::now().time_since_epoch()).count());
 
   SquareMatrix<T> CreateRandomMatrix(size_t dim, bool symmetric = false);
+  SquareMatrix<T> CreateLowdiagMatrix(size_t dim);
 
   static SquareMatrix<T> CreateIdentity(size_t dim);
 
@@ -64,6 +65,25 @@ SquareMatrix<T> MatrixFactory<T>::CreateRandomMatrix(size_t dim, bool symmetric)
       }
     }
 
+    data.push_back(row);
+  }
+
+  return SquareMatrix<T>(std::move(data));
+}
+
+template<class T>
+SquareMatrix<T> MatrixFactory<T>::CreateLowdiagMatrix(size_t dim) {
+  std::vector<std::vector<T>> data;
+  data.reserve(dim);
+
+  for (size_t row_index = 0; row_index < dim; ++row_index) {
+    std::vector<T> row;
+    size_t length = std::min(dim, row_index + 2);
+    row.reserve(length);
+    for (size_t column_index = 0; column_index < length; ++column_index) {
+      row.push_back(distribution_(generator_));
+    }
+    row.resize(dim, T(0));
     data.push_back(row);
   }
 

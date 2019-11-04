@@ -11,7 +11,6 @@ int main() {
                                   {5, 10, 3},
                                   {4, 5, 4}
                               });
-
   auto decompositionA = SquareMatrixManager(matrixA).PerformDLU(true);
 
   PrintMatrix(std::cout, decompositionA.low_up, false);

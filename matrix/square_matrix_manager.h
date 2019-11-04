@@ -2,9 +2,11 @@
 
 #include "decompositions.h"
 #include "square_matrix.h"
+#include "matrix_factory.h"
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <numeric>
 
 template<class T>
@@ -17,12 +19,17 @@ class SquareMatrixManager {
 
   LDLTDecomposition<T> PerformLDLT() const;
   DLUDecomposition<T> PerformDLU(bool swap_rows = false) const;
-  std::vector<T> SolveSystem(const std::vector<T>& result) const;
 
-  void EnsureMatrixSymmetry() const;
+  // Lowdiag = Lower triangular matrix + one extra diagonal above it
+  SquareMatrix<T> InverseLowdiag(bool swap_rows = false) const;
+
+  std::vector<T> SolveSystem(const std::vector<T>& result) const;
 
  private:
   SquareMatrix<T> matrix_;
+
+  void EnsureMatrixSymmetry() const;
+  void EnsureLowdiagStructure() const;
 };
 
 template<class T>
@@ -58,10 +65,8 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
     }
 
     for (size_t row = iteration + 1; row < dim; ++row) {
-      T coefficient = - matrix[iteration][row] / matrix[iteration][iteration];
-      for (size_t column = row; column < dim; ++column) {
-        matrix[row][column] += coefficient * matrix[iteration][column];
-      }
+      auto coefficient = -matrix[iteration][row] / matrix[iteration][iteration];
+      matrix.AddRowToOther(row, iteration, coefficient, row, dim - 1);
     }
 
     // Form a row of resulting matrix low
@@ -69,7 +74,7 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
     for (size_t index = 0; index <= iteration; ++index) {
       row.push_back(matrix[index][iteration]);
     }
-    row.resize(dim, T());
+    row.resize(dim, T(0));
     transposed.push_back(row);
   }
 
@@ -96,9 +101,9 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
   // TODO: measure time from this point (@flipper)
   size_t dim = matrix_.GetDim();
   for (size_t iteration = 0; iteration < dim; ++iteration) {
-    size_t max_index = iteration;
 
     if (swap_rows) {
+      size_t max_index = iteration;
       // Search for max element
       for (size_t index = iteration + 1; index < dim; ++index) {
         if (std::abs(low_up[max_index][iteration]) < std::abs(low_up[index][iteration])) {
@@ -112,7 +117,7 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
       }
     }
 
-    // base element must be non-zero
+    // Base element must be non-zero
     if (low_up[iteration][iteration] == 0) {
       std::string message = "Unable to perform DLU decomposition.";
       if (!swap_rows) {
@@ -121,16 +126,17 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
       throw std::logic_error(message);
     }
 
-    // perform gauss step
-    // 1. Low matrix
-    for (size_t row_index = iteration + 1; row_index < dim; ++row_index) {
-      low_up[row_index][iteration] /= low_up[iteration][iteration];
-    }
+    if (iteration != dim - 1) {
+      // Perform gauss step
+      // 1. Low matrix
+      low_up.MultiplyColumn(iteration, T(1) / low_up[iteration][iteration],
+                            iteration + 1, dim - 1);
 
-    // 2. Up matrix
-    for (size_t row = iteration + 1; row < dim; ++row) {
-      for (size_t column = iteration + 1; column < dim; ++column) {
-        low_up[row][column] -= low_up[iteration][column] * low_up[row][iteration];
+
+      // 2. Up matrix
+      for (size_t row = iteration + 1; row < dim; ++row) {
+        low_up.AddRowToOther(row, iteration, -low_up[row][iteration],
+                             iteration + 1, dim - 1);
       }
     }
   }
@@ -147,6 +153,62 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
 }
 
 template<class T>
+SquareMatrix<T> SquareMatrixManager<T>::InverseLowdiag(bool swap_rows) const {
+  EnsureLowdiagStructure();
+  size_t dim = matrix_.GetDim();
+
+  SquareMatrix<T> left_matrix = matrix_;
+  SquareMatrix<T> inverse = MatrixFactory<T>::CreateIdentity(dim);
+
+  const std::string message = "Unable to find inverse of lowdiag matrix.";
+  const double epsilon = 1e-6;
+
+  // Step 1. Go up and make zeros on odd diagonal
+  for (size_t iter = 0; iter < dim; ++iter) {
+    // Smells bad, I know. Suggest a fix, please
+    size_t iteration = dim - iter - 1;
+
+    if (swap_rows) {
+      if (iteration != 0 && std::abs(left_matrix[iteration][iteration]) <
+          std::abs(left_matrix[iteration - 1][iteration])) {
+        left_matrix.SwapRows(iteration - 1, iteration);
+        inverse.SwapRows(iteration - 1, iteration);
+      }
+    }
+
+    // Base element must be non-zero
+    if (left_matrix[iteration][iteration] == 0) {
+      if (!swap_rows) {
+        throw std::logic_error(message + " Consider set swap_rows to true.");
+      }
+      throw std::logic_error(message);
+    }
+
+    inverse.MultiplyRow(iteration, T(1) / left_matrix[iteration][iteration]);
+    left_matrix.MultiplyRow(iteration, T(1) / left_matrix[iteration][iteration], 0, iteration);
+
+    // If necessary, zero one element above base one
+    if (iteration > 0) {
+      inverse.AddRowToOther(iteration - 1, iteration, -left_matrix[iteration - 1][iteration]);
+      left_matrix.AddRowToOther(iteration - 1, iteration, -left_matrix[iteration - 1][iteration], 0, iteration);
+    }
+  }
+
+  // Step 2. Go down and make matrix a diagonal
+  // There are already a_{ii} = 1 \forall i \in \overline{0, dim - 1}
+  for (size_t iteration = 0; iteration < dim; ++iteration) {
+    if (std::abs(left_matrix[iteration][iteration] - T(1)) > epsilon) {
+      throw std::logic_error(message);
+    }
+    for (size_t row = iteration + 1; row < dim; ++row) {
+      inverse.AddRowToOther(row, iteration, -left_matrix[row][iteration]);
+    }
+  }
+
+  return inverse;
+}
+
+template<class T>
 std::vector<T> SquareMatrixManager<T>::SolveSystem(const std::vector<T>& result) const {
   return std::vector<T>(result);
 }
@@ -158,6 +220,18 @@ void SquareMatrixManager<T>::EnsureMatrixSymmetry() const {
     for (size_t column = row + 1; column < dim; ++column) {
       if (matrix_[row][column] != matrix_[column][row]) {
         throw std::invalid_argument("Invalid matrix structure (symmetric matrix required)");
+      }
+    }
+  }
+}
+
+template<class T>
+void SquareMatrixManager<T>::EnsureLowdiagStructure() const {
+  size_t dim = matrix_.GetDim();
+  for (size_t row = 0; row < dim; ++row) {
+    for (size_t column = row + 2; column < dim; ++column) {
+      if (matrix_[row][column] != 0) {
+        throw std::invalid_argument("Invalid matrix structure (lowdiag matrix required)");
       }
     }
   }
