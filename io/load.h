@@ -10,16 +10,22 @@ namespace loader {
 
 namespace filesystem = std::experimental::filesystem;
 
-template<class T>
-SquareMatrix<T> LoadMatrix(const std::string& filename_path) {
-  if (!filesystem::exists(filename_path)) {
-    throw std::invalid_argument("LoadMatrix(): 'filename_path' doesn't exists");
+inline void CheckFileExistence(const std::string& filename_path) {
+  if (!filesystem::exists(filename_path) || !filesystem::is_regular_file(filename_path)) {
+    throw std::logic_error("'filename_path' doesn't exist or is not a file");
   }
-  if (!filesystem::is_regular_file(filename_path)) {
-    throw std::invalid_argument("LoadMatrix(): 'filename_path' is not a file");
-  }
+}
 
-  std::ifstream input(filename_path);
+inline void CheckDirectoryExistence(const std::string& directory_path) {
+  if (!filesystem::exists(directory_path) || !filesystem::is_directory(directory_path)) {
+    throw std::logic_error("'directory_path' doesn't exists or is not a directory");
+  }
+}
+
+std::vector<std::string> ListFiles(const std::string& directory_path);
+
+template<class T>
+SquareMatrix<T> LoadMatrix(std::istream& input) {
   size_t dim;
   input >> dim;
 
@@ -36,47 +42,72 @@ SquareMatrix<T> LoadMatrix(const std::string& filename_path) {
 }
 
 template<class T>
+std::vector<T> LoadVector(std::istream& input) {
+  size_t dim;
+  input >> dim;
+
+  std::vector<T> vector(dim);
+  for (auto& element : vector) {
+    input >> element;
+  }
+  return vector;
+}
+
+template<class T>
+SquareMatrix<T> LoadMatrix(const std::string& filename_path) {
+  CheckFileExistence(filename_path);
+  std::ifstream input(filename_path);
+  return LoadMatrix<T>(input);
+}
+
+template<class T>
+std::vector<T> LoadVector(const std::string& filename_path) {
+  CheckFileExistence(filename_path);
+  std::ifstream input(filename_path);
+  return LoadVector<T>(input);
+}
+
+template<class T>
+System<T> LoadSystem(const std::string& filename_path) {
+  CheckFileExistence(filename_path);
+  std::ifstream input(filename_path);
+  return {LoadMatrix<T>(input), LoadVector<T>(input)};
+}
+
+template<class T>
 std::vector<SquareMatrix<T>> LoadMatrices(const std::string& directory_path) {
-  if (!filesystem::exists(directory_path)) {
-    throw std::invalid_argument("LoadMatrices(): 'directory_path' doesn't exists");
-  }
-  if (!filesystem::is_directory(directory_path)) {
-    throw std::invalid_argument("LoadMatrices(): 'directory_path' is not a directory");
-  }
-
-  std::vector<std::string> files;
-  try {
-    filesystem::recursive_directory_iterator iter(directory_path);
-    // Iterate till end
-    while (iter != filesystem::recursive_directory_iterator()) {
-      if (filesystem::is_directory(iter->path())) {
-        // c++17 Filesystem API to skip current directory iteration
-        iter.disable_recursion_pending();
-      } else {
-        // Add the name in vector
-        files.push_back(iter->path().string());
-      }
-
-      std::error_code error;
-      iter.increment(error);
-      if (error) {
-        std::cerr << "Error While Accessing : " << iter->path().string()
-                  << " :: " << error.message() << '\n';
-      }
-    }
-  }
-  catch (std::system_error& e) {
-    std::cerr << e.what();
-  }
+  auto files = ListFiles(directory_path);
 
   std::vector<SquareMatrix<T>> matrices;
   matrices.reserve(files.size());
-
   for (const auto& file : files) {
     matrices.push_back(LoadMatrix<T>(file));
   }
-
   return matrices;
+}
+
+template<class T>
+std::vector<std::vector<T>> LoadVectors(const std::string& directory_path) {
+  auto files = ListFiles(directory_path);
+
+  std::vector<std::vector<T>> vectors;
+  vectors.reserve(files.size());
+  for (const auto& file : files) {
+    vectors.push_back(LoadVector<T>(file));
+  }
+  return vectors;
+}
+
+template<class T>
+std::vector<System<T>> LoadSystems(const std::string& directory_path) {
+  auto files = ListFiles(directory_path);
+
+  std::vector<System<T>> systems;
+  systems.reserve(files.size());
+  for (const auto& file : files) {
+    systems.push_back(LoadSystem<T>(file));
+  }
+  return systems;
 }
 
 } // namespace loader

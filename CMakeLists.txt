@@ -9,5 +9,5 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-O3")
 SET(CMAKE_CXX_FLAGS_RELEASE  "-O3")
 
 include_directories(matrix utils io)
-add_executable(cma-lab main.cpp)
+add_executable(cma-lab main.cpp io/load.cpp)
 target_link_libraries(cma-lab stdc++fs)
