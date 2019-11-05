@@ -328,3 +328,6 @@ SquareMatrix<M> operator*(const SquareMatrix<M>& lhs, const SquareMatrix<M>& rhs
 
   return SquareMatrix<M>(std::move(data));
 }
+
+template<class T>
+using System = std::pair<SquareMatrix<T>, std::vector<T>>;
