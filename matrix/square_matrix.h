@@ -41,6 +41,8 @@ class SquareMatrix {
   void SwapRows(std::vector<size_t> permutation);
   void SwapColumns(size_t first_column, size_t second_column);
 
+  void Transpose();
+
   [[nodiscard]] size_t GetDim() const;
   bool IsEmpty() const;
 
@@ -266,6 +268,22 @@ void SquareMatrix<T>::SwapColumns(size_t first_column, size_t second_column) {
   for (size_t row_index = 0; row_index < dim_; ++row_index) {
     data_[row_index][second_column] = buffer[row_index];
   }
+}
+
+template<class T>
+void SquareMatrix<T>::Transpose() {
+  std::vector<std::vector<T>> transposed;
+  transposed.reserve(dim_);
+
+  for (size_t column = 0; column < dim_; ++column) {
+    std::vector<T> line;
+    line.reserve(dim_);
+    for (size_t row = 0; row < dim_; ++row) {
+      line.push_back(data_[row][column]);
+    }
+    transposed.push_back(line);
+  }
+  data_ = transposed;
 }
 
 template<class T>
