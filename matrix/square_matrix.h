@@ -138,7 +138,7 @@ void SquareMatrix<T>::MultiplyRow(size_t row_index, T coefficient, size_t begin,
 template<class T>
 void SquareMatrix<T>::MultiplyColumn(size_t column_index, T coefficient) {
   if (!IsEmpty()) {
-    MultiplyRow(column_index, coefficient, 0, dim_ - 1);
+    MultiplyColumn(column_index, coefficient, 0, dim_ - 1);
   }
 }
 
