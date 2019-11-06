@@ -44,7 +44,7 @@ class SquareMatrix {
   void Transpose();
 
   [[nodiscard]] size_t GetDim() const;
-  bool IsEmpty() const;
+  [[nodiscard]] bool IsEmpty() const;
 
   template<class M>
   friend SquareMatrix<M> operator*(const SquareMatrix<M>& lhs, const SquareMatrix<M>& rhs);

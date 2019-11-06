@@ -30,6 +30,8 @@ class MatrixFactory {
   SquareMatrix<T> CreateRandomMatrix(size_t dim, bool symmetric = false);
   SquareMatrix<T> CreateLowdiagMatrix(size_t dim);
 
+  std::vector<T> CreateRandomVector(size_t length);
+
   static SquareMatrix<T> CreateIdentity(size_t dim);
 
  private:
@@ -88,6 +90,15 @@ SquareMatrix<T> MatrixFactory<T>::CreateLowdiagMatrix(size_t dim) {
   }
 
   return SquareMatrix<T>(std::move(data));
+}
+
+template<class T>
+std::vector<T> MatrixFactory<T>::CreateRandomVector(size_t length) {
+  std::vector<T> result;
+  for (size_t index = 0; index < length; ++index) {
+    result.push_back(distribution_(generator_));
+  }
+  return result;
 }
 
 template<class T>

@@ -71,7 +71,9 @@ template<class T>
 System<T> LoadSystem(const std::string& filename_path) {
   CheckFileExistence(filename_path);
   std::ifstream input(filename_path);
-  return {LoadMatrix<T>(input), LoadVector<T>(input)};
+  auto matrix = LoadMatrix<T>(input);
+  auto column = LoadVector<T>(input);
+  return {matrix, column};
 }
 
 template<class T>

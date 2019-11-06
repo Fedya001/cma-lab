@@ -32,13 +32,25 @@ class SquareMatrixManager {
   // Lowdiag = Lower triangular matrix + one extra diagonal above it
   SquareMatrix<T> InverseLowdiag(bool swap_rows = false) const;
 
-  std::vector<T> SolveSystem(const std::vector<T>& result) const;
+  std::vector<T> SolveSystem(std::vector<T> result,
+                             MatrixType matrix_type = MatrixType::ORDINARY) const;
 
  private:
   SquareMatrix<T> matrix_;
 
   void EnsureMatrixType(MatrixType matrix_type) const;
- };
+
+  std::vector<T> SolveUpperSystem(
+      const SquareMatrix<T>& upper,
+      std::vector<T> result,
+      const std::string& error_message = "Unable to solve upper triangular system"
+  ) const;
+  std::vector<T> SolveLowerSystem(
+      const SquareMatrix<T>& lower,
+      std::vector<T> result,
+      const std::string& error_message = "Unable to solve lower triangular system"
+  ) const;
+};
 
 template<class T>
 SquareMatrixManager<T>::SquareMatrixManager(SquareMatrix<T> matrix)
@@ -217,8 +229,49 @@ SquareMatrix<T> SquareMatrixManager<T>::InverseLowdiag(bool swap_rows) const {
 }
 
 template<class T>
-std::vector<T> SquareMatrixManager<T>::SolveSystem(const std::vector<T>& result) const {
-  return std::vector<T>(result);
+std::vector<T> SquareMatrixManager<T>::SolveSystem(std::vector<T> result,
+                                                   MatrixType matrix_type) const {
+  EnsureMatrixType(matrix_type);
+  size_t dim = matrix_.GetDim();
+
+  switch (matrix_type) {
+    case MatrixType::UPPER_TRIANGULAR:return SolveUpperSystem(matrix_, result);
+    case MatrixType::LOWER_TRIANGULAR:return SolveLowerSystem(matrix_, result);
+    case MatrixType::SYMMETRIC: {
+      auto decomposition = PerformLDLT();
+      decomposition.MultiplyDiagonal();
+      result = SolveLowerSystem(decomposition.low, result);
+      decomposition.MultiplyDiagonal();
+      decomposition.low.Transpose();
+      return SolveUpperSystem(decomposition.low, result);
+    }
+    default: {
+      // This function operates with lowdiag matrix as it is ordinary
+      auto decomposition = PerformDLU(true);
+
+      std::vector<T> upper_diagonal;
+      upper_diagonal.reserve(dim);
+      // Transform to lower-diagonal (substitute zeros)
+      for (size_t index = 0; index < dim; ++index) {
+        upper_diagonal.push_back(decomposition.low_up[index][index]);
+        decomposition.low_up[index][index] = T(1);
+      }
+
+      // Multiply result on inverse permutation
+      std::vector<T> permutation(dim);
+      for (size_t index = 0; index < dim; ++index) {
+        permutation[decomposition.rows_permutations[index]] = result[index];
+      }
+
+      result = SolveLowerSystem(decomposition.low_up, permutation);
+
+      // return back to upper diagonal
+      for (size_t index = 0; index < dim; ++index) {
+        decomposition.low_up[index][index] = upper_diagonal[index];
+      }
+      return SolveUpperSystem(decomposition.low_up, result);
+    }
+  }
 }
 
 template<class T>
@@ -228,23 +281,22 @@ void SquareMatrixManager<T>::EnsureMatrixType(MatrixType matrix_type) const {
 
   switch (matrix_type) {
     case MatrixType::SYMMETRIC:
-      validate_function = [this](size_t i, size_t j) {return matrix_[i][j] == matrix_[j][i];};
+      validate_function = [this](size_t i, size_t j) { return matrix_[i][j] == matrix_[j][i]; };
       message = "Invalid matrix structure (symmetric matrix required)";
       break;
     case MatrixType::UPPER_TRIANGULAR:
-      validate_function = [this](size_t i, size_t j) {return j >= i || matrix_[i][j] == 0;};
+      validate_function = [this](size_t i, size_t j) { return j >= i || matrix_[i][j] == 0; };
       message = "Invalid matrix structure (upper triangular matrix required)";
       break;
     case MatrixType::LOWER_TRIANGULAR:
-      validate_function = [this](size_t i, size_t j) {return i >= j || matrix_[i][j] == 0;};
+      validate_function = [this](size_t i, size_t j) { return i >= j || matrix_[i][j] == 0; };
       message = "Invalid matrix structure (lower triangular matrix required)";
       break;
     case MatrixType::LOWDIAG:
-      validate_function = [this](size_t i, size_t j) {return i + 1 >= j || matrix_[i][j] == 0;};
+      validate_function = [this](size_t i, size_t j) { return i + 1 >= j || matrix_[i][j] == 0; };
       message = "Invalid matrix structure (lowdiag matrix required)";
       break;
-    default:
-      return;
+    default:return;
   }
 
   size_t dim = matrix_.GetDim();
@@ -255,4 +307,47 @@ void SquareMatrixManager<T>::EnsureMatrixType(MatrixType matrix_type) const {
       }
     }
   }
+}
+
+template<class T>
+std::vector<T> SquareMatrixManager<T>::SolveLowerSystem(
+    const SquareMatrix<T>& lower,
+    std::vector<T> result,
+    const std::string& error_message
+) const {
+  size_t dim = lower.GetDim();
+
+  for (size_t iteration = 0; iteration < dim; ++iteration) {
+    if (lower[iteration][iteration] == 0) {
+      throw std::logic_error(error_message);
+    }
+
+    result[iteration] /= lower[iteration][iteration];
+    for (size_t row = iteration + 1; row < dim; ++row) {
+      result[row] -= lower[row][iteration] * result[iteration];
+    }
+  }
+  return result;
+}
+
+template<class T>
+std::vector<T> SquareMatrixManager<T>::SolveUpperSystem(
+    const SquareMatrix<T>& upper,
+    std::vector<T> result,
+    const std::string& error_message
+) const {
+  size_t dim = upper.GetDim();
+
+  for (size_t iter = 0; iter < dim; ++iter) {
+    size_t iteration = dim - iter - 1;
+    if (upper[iteration][iteration] == 0) {
+      throw std::logic_error(error_message);
+    }
+
+    result[iteration] /= upper[iteration][iteration];
+    for (size_t row = 0; row < iteration; ++row) {
+      result[row] -= upper[row][iteration] * result[iteration];
+    }
+  }
+  return result;
 }

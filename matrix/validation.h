@@ -3,7 +3,9 @@
 #include "decompositions.h"
 #include "load.h"
 #include "matrix_factory.h"
+#include "print_utils.h"
 #include "square_matrix.h"
+#include "square_matrix_manager.h"
 
 #include <cmath>
 #include <iostream>
@@ -73,7 +75,7 @@ void ValidateLDLT(const LDLTDecomposition<T>& decomposition,
 
 template<class T>
 void ValidateLowdiagInverse(const SquareMatrix<T>& inverse,
-                  const SquareMatrix<T>& matrix) {
+                            const SquareMatrix<T>& matrix) {
   const auto result = inverse * matrix; // identity expected
 
   size_t dim = matrix.GetDim();
@@ -91,12 +93,28 @@ void ValidateLowdiagInverse(const SquareMatrix<T>& inverse,
 }
 
 template<class T>
+void ValidateSystemSolution(const std::vector<T> solution, const System<T>& system) {
+  size_t dim = system.first.GetDim();
+
+  for (size_t row = 0; row < dim; ++row) {
+    T sum = T();
+    for (size_t column = 0; column < dim; ++column) {
+      sum += solution[column] * system.first[row][column];
+    }
+    if (std::abs(sum - system.second[row]) > EPSILON) {
+      throw std::runtime_error("Invalid system solution\n");
+    }
+  }
+}
+
+template<class T>
 bool TestAll() {
   // Step out of a cmake-build-debug directory
   const std::string dlu_directory("../data/tests/DLU");
   const std::string ldlt_directory("../data/tests/LDLT");
 
   const std::string lowdiag_task_directory("../data/task1");
+  const std::string lu_systems_task_directory("../data/task2");
 
   auto manager = SquareMatrixManager(SquareMatrix<T>(0));
 
@@ -133,7 +151,7 @@ bool TestAll() {
 
       auto degenerate = loader::LoadMatrix<T>(lowdiag_task_directory + "/sampleB.data");
       manager.SetMatrix(degenerate);
-      if (!CheckLogicErrorExceptionThrown([&]() {manager.InverseLowdiag(true);})) {
+      if (!CheckLogicErrorExceptionThrown([&]() { manager.InverseLowdiag(true); })) {
         throw std::runtime_error("Inverse lowdiag fail: can't inverse degenerate matrix\n");
       }
     }
@@ -142,6 +160,26 @@ bool TestAll() {
       auto matrix = matrix_factory.CreateLowdiagMatrix(dim);
       manager.SetMatrix(matrix);
       ValidateLowdiagInverse(manager.InverseLowdiag(true), matrix);
+    }
+
+    // 5. Test solving systems (non-symmetric)
+    for (const auto& system : loader::LoadSystems<T>(lu_systems_task_directory)) {
+      manager.SetMatrix(system.first);
+      ValidateSystemSolution(manager.SolveSystem(system.second), system);
+    }
+
+    // Random tests (symmetric and non-symmetric systems)
+    for (size_t dim : {10, 20, 50, 100}) {
+      auto matrix = matrix_factory.CreateRandomMatrix(dim);
+      auto symmetric_matrix = matrix_factory.CreateRandomMatrix(dim, true);
+      auto column = matrix_factory.CreateRandomVector(dim);
+
+      manager.SetMatrix(matrix);
+      ValidateSystemSolution(manager.SolveSystem(column), {matrix, column});
+
+      manager.SetMatrix(symmetric_matrix);
+      ValidateSystemSolution(manager.SolveSystem(column,
+          SquareMatrixManager<T>::MatrixType::SYMMETRIC), {symmetric_matrix, column});
     }
   } catch (std::exception& ex) {
     std::cerr << ex.what() << std::endl;
