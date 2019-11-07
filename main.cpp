@@ -1,4 +1,6 @@
+#include "relaxation.h"
 #include "validation.h"
+#include "print_utils.h"
 
 #include <iostream>
 
@@ -8,6 +10,8 @@ int main() {
   } else {
     std::cerr << "Some tests failed\n";
   }
+
+  PrintRow(std::cout, SolveSystem(5, 0.1));
 
   return 0;
 }
