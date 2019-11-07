@@ -57,7 +57,7 @@ class SquareMatrix {
   std::vector<std::vector<T>> data_;
 
  private:
-  void EnsureMatrixStructure();
+  void EnsureMatrixStructure() const;
 };
 
 template<class T>
@@ -297,7 +297,7 @@ bool SquareMatrix<T>::IsEmpty() const {
 }
 
 template<class T>
-void SquareMatrix<T>::EnsureMatrixStructure() {
+void SquareMatrix<T>::EnsureMatrixStructure() const {
   for (const auto& row : data_) {
     if (row.size() != dim_) {
       throw std::invalid_argument("Invalid matrix structure");
