@@ -108,6 +108,28 @@ void ValidateSystemSolution(const std::vector<T> solution, const System<T>& syst
 }
 
 template<class T>
+void ValidateThreeDiagonalSystemSolution(
+    const std::vector<T> solution,
+    const ThreeDiagonalSystem<T> system
+) {
+  int32_t dim = system.first.GetDim();
+
+  for (int32_t row = 0; row < dim; ++row) {
+    T sum = system.first[row][1] * solution[row];
+    if (row > 0) {
+      sum += system.first[row][0] * solution[row - 1];
+    }
+    if (row < dim - 1) {
+      sum += system.first[row][2] * solution[row + 1];
+    }
+
+    if (std::abs(sum - system.second[row]) > EPSILON) {
+      throw std::runtime_error("Invalid three-diagonal system solution\n");
+    }
+  }
+}
+
+template<class T>
 bool TestAll() {
   // Step out of a cmake-build-debug directory
   const std::string dlu_directory("../data/tests/DLU");
@@ -115,6 +137,7 @@ bool TestAll() {
 
   const std::string lowdiag_task_directory("../data/task1");
   const std::string lu_systems_task_directory("../data/task2");
+  const std::string sweep_method_task_directory("../data/task4");
 
   auto manager = SquareMatrixManager(SquareMatrix<T>(0));
 
@@ -178,8 +201,18 @@ bool TestAll() {
       ValidateSystemSolution(manager.SolveSystem(column), {matrix, column});
 
       manager.SetMatrix(symmetric_matrix);
-      ValidateSystemSolution(manager.SolveSystem(column,
-          SquareMatrixManager<T>::MatrixType::SYMMETRIC), {symmetric_matrix, column});
+      ValidateSystemSolution(
+          manager.SolveSystem(column, SquareMatrixManager<T>::MatrixType::SYMMETRIC),
+          {symmetric_matrix, column}
+      );
+    }
+
+    // 6. Test three-diagonal matrices
+    for (const auto& system : loader::LoadThreeDiagonalSystems<T>(sweep_method_task_directory)) {
+      ValidateThreeDiagonalSystemSolution(
+          system.first.SolveSystem(system.second, true),
+          system
+      );
     }
   } catch (std::exception& ex) {
     std::cerr << ex.what() << std::endl;
