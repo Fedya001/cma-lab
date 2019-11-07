@@ -43,12 +43,12 @@ class SquareMatrixManager {
   std::vector<T> SolveUpperSystem(
       const SquareMatrix<T>& upper,
       std::vector<T> result,
-      const std::string& error_message = "Unable to solve upper triangular system"
+      const std::string& error_message = "Unable to solve upper triangular system. Matrix is degenerate."
   ) const;
   std::vector<T> SolveLowerSystem(
       const SquareMatrix<T>& lower,
       std::vector<T> result,
-      const std::string& error_message = "Unable to solve lower triangular system"
+      const std::string& error_message = "Unable to solve lower triangular system. Matrix is degenerate."
   ) const;
 };
 
@@ -142,6 +142,8 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
       std::string message = "Unable to perform DLU decomposition.";
       if (!swap_rows) {
         message += " Consider set swap_rows to true.";
+      } else {
+        message += " Matrix is degenerate.";
       }
       throw std::logic_error(message);
     }
@@ -201,7 +203,7 @@ SquareMatrix<T> SquareMatrixManager<T>::InverseLowdiag(bool swap_rows) const {
       if (!swap_rows) {
         throw std::logic_error(message + " Consider set swap_rows to true.");
       }
-      throw std::logic_error(message);
+      throw std::logic_error(message + " Matrix is degenerate.");
     }
 
     inverse.MultiplyRow(iteration, T(1) / left_matrix[iteration][iteration]);
@@ -218,7 +220,7 @@ SquareMatrix<T> SquareMatrixManager<T>::InverseLowdiag(bool swap_rows) const {
   // There are already a_{ii} = 1 \forall i \in \overline{0, dim - 1}
   for (size_t iteration = 0; iteration < dim; ++iteration) {
     if (std::abs(left_matrix[iteration][iteration] - T(1)) > epsilon) {
-      throw std::logic_error(message);
+      throw std::logic_error(message + " Matrix is degenerate.");
     }
     for (size_t row = iteration + 1; row < dim; ++row) {
       inverse.AddRowToOther(row, iteration, -left_matrix[row][iteration]);
