@@ -9,7 +9,7 @@
 template<class T>
 class SquareMatrix {
  public:
-  explicit SquareMatrix(size_t dim);
+  explicit SquareMatrix(int32_t dim);
 
   explicit SquareMatrix(const std::vector<std::vector<T>>& data);
   explicit SquareMatrix(std::vector<std::vector<T>>&& data);
@@ -22,28 +22,28 @@ class SquareMatrix {
 
   SquareMatrix<T>& operator*=(const SquareMatrix<T>& other);
 
-  [[nodiscard]] std::vector<T>& operator[](size_t index);
-  [[nodiscard]] const std::vector<T>& operator[](size_t index) const;
+  [[nodiscard]] std::vector<T>& operator[](int32_t index);
+  [[nodiscard]] const std::vector<T>& operator[](int32_t index) const;
 
-  void MultiplyRow(size_t row_index, T coefficient);
-  void MultiplyRow(size_t row_index, T coefficient, size_t begin, size_t end);
-  void MultiplyColumn(size_t column_index, T coefficient);
-  void MultiplyColumn(size_t column_index, T coefficient, size_t begin, size_t end);
+  void MultiplyRow(int32_t row_index, T coefficient);
+  void MultiplyRow(int32_t row_index, T coefficient, int32_t begin, int32_t end);
+  void MultiplyColumn(int32_t column_index, T coefficient);
+  void MultiplyColumn(int32_t column_index, T coefficient, int32_t begin, int32_t end);
 
-  void AddRowToOther(size_t target_row, size_t source_row, T coefficient);
-  void AddRowToOther(size_t target_row, size_t source_row, T coefficient,
-                     size_t begin, size_t end);
-  void AddColumnToOther(size_t target_column, size_t source_column, T coefficient);
-  void AddColumnToOther(size_t target_column, size_t source_column, T coefficient,
-                        size_t begin, size_t end);
+  void AddRowToOther(int32_t target_row, int32_t source_row, T coefficient);
+  void AddRowToOther(int32_t target_row, int32_t source_row, T coefficient,
+                     int32_t begin, int32_t end);
+  void AddColumnToOther(int32_t target_column, int32_t source_column, T coefficient);
+  void AddColumnToOther(int32_t target_column, int32_t source_column, T coefficient,
+                        int32_t begin, int32_t end);
 
-  void SwapRows(size_t first_row, size_t second_row);
-  void SwapRows(std::vector<size_t> permutation);
-  void SwapColumns(size_t first_column, size_t second_column);
+  void SwapRows(int32_t first_row, int32_t second_row);
+  void SwapRows(std::vector<int32_t> permutation);
+  void SwapColumns(int32_t first_column, int32_t second_column);
 
   void Transpose();
 
-  [[nodiscard]] size_t GetDim() const;
+  [[nodiscard]] int32_t GetDim() const;
   [[nodiscard]] bool IsEmpty() const;
 
   template<class M>
@@ -53,7 +53,7 @@ class SquareMatrix {
                           bool latex_syntax_on, uint8_t precision, const std::string& label);
 
  protected:
-  size_t dim_;
+  int32_t dim_;
   std::vector<std::vector<T>> data_;
 
  private:
@@ -61,7 +61,7 @@ class SquareMatrix {
 };
 
 template<class T>
-SquareMatrix<T>::SquareMatrix(size_t dim)
+SquareMatrix<T>::SquareMatrix(int32_t dim)
     : dim_(dim),
       data_(dim, std::vector<T>(dim)) {}
 
@@ -100,117 +100,128 @@ SquareMatrix<T>& SquareMatrix<T>::operator*=(const SquareMatrix<T>& other) {
 }
 
 template<class T>
-std::vector<T>& SquareMatrix<T>::operator[](size_t index) {
-  if (index >= data_.size()) {
+std::vector<T>& SquareMatrix<T>::operator[](int32_t index) {
+  if (index < 0 || index >= static_cast<int32_t>(data_.size())) {
     throw std::out_of_range("Invalid index in operator[]");
   }
   return data_[index];
 }
 
 template<class T>
-const std::vector<T>& SquareMatrix<T>::operator[](size_t index) const {
+const std::vector<T>& SquareMatrix<T>::operator[](int32_t index) const {
+  if (index < 0 || index >= static_cast<int32_t>(data_.size())) {
+    throw std::out_of_range("Invalid index in operator[]");
+  }
   return data_[index];
 }
 
 template<class T>
-void SquareMatrix<T>::MultiplyRow(size_t row_index, T coefficient) {
+void SquareMatrix<T>::MultiplyRow(int32_t row_index, T coefficient) {
   if (!IsEmpty()) {
     MultiplyRow(row_index, coefficient, 0, dim_ - 1);
   }
 }
 
 template<class T>
-void SquareMatrix<T>::MultiplyRow(size_t row_index, T coefficient, size_t begin, size_t end) {
+void SquareMatrix<T>::MultiplyRow(int32_t row_index, T coefficient, int32_t begin, int32_t end) {
   if (begin >= dim_ || end >= dim_) {
     throw std::out_of_range("Invalid multiply row range");
   }
 
-  if (row_index >= data_.size()) {
+  if (row_index >= static_cast<int32_t>(data_.size())) {
     throw std::out_of_range("Invalid row index");
   }
 
   auto& row = data_[row_index];
-  for (size_t index = begin; index <= end; ++index) {
+  for (int32_t index = begin; index <= end; ++index) {
     row[index] *= coefficient;
   }
 }
 
 template<class T>
-void SquareMatrix<T>::MultiplyColumn(size_t column_index, T coefficient) {
+void SquareMatrix<T>::MultiplyColumn(int32_t column_index, T coefficient) {
   if (!IsEmpty()) {
     MultiplyColumn(column_index, coefficient, 0, dim_ - 1);
   }
 }
 
 template<class T>
-void SquareMatrix<T>::MultiplyColumn(size_t column_index, T coefficient, size_t begin, size_t end) {
+void SquareMatrix<T>::MultiplyColumn(int32_t column_index, T coefficient, int32_t begin, int32_t end) {
   if (begin >= dim_ || end >= dim_) {
     throw std::out_of_range("Invalid multiply column range");
   }
 
-  if (column_index >= data_.size()) {
+  if (column_index >= static_cast<int32_t>(data_.size())) {
     throw std::out_of_range("Invalid column index");
   }
 
-  for (size_t row_index = begin; row_index <= end; ++row_index) {
+  for (int32_t row_index = begin; row_index <= end; ++row_index) {
     data_[row_index][column_index] *= coefficient;
   }
 }
 
 template<class T>
-void SquareMatrix<T>::AddRowToOther(size_t target_row, size_t source_row, T coefficient) {
+void SquareMatrix<T>::AddRowToOther(int32_t target_row, int32_t source_row, T coefficient) {
   if (!IsEmpty()) {
     AddRowToOther(target_row, source_row, coefficient, 0, dim_ - 1);
   }
 }
 
 template<class T>
-void SquareMatrix<T>::AddRowToOther(size_t target_row, size_t source_row, T coefficient,
-                                    size_t begin, size_t end) {
-  if (begin >= dim_ || end >= dim_) {
+void SquareMatrix<T>::AddRowToOther(int32_t target_row, int32_t source_row, T coefficient,
+                                    int32_t begin, int32_t end) {
+  if (begin < 0 || end < 0 || begin >= dim_ || end >= dim_) {
     throw std::out_of_range("Invalid AddRowToOther() range");
   }
 
-  if (target_row >= data_.size() || source_row >= data_.size()) {
+  if (target_row < 0 || source_row < 0 ||
+      target_row >= static_cast<int32_t>(data_.size()) ||
+      source_row >= static_cast<int32_t>(data_.size())) {
     throw std::out_of_range("AddRowToOther(): Invalid row index");
   }
 
-  for (size_t index = begin; index <= end; ++index) {
+  for (int32_t index = begin; index <= end; ++index) {
     data_[target_row][index] += coefficient * data_[source_row][index];
   }
 }
 
 template<class T>
-void SquareMatrix<T>::AddColumnToOther(size_t target_column, size_t source_column, T coefficient) {
+void SquareMatrix<T>::AddColumnToOther(int32_t target_column, int32_t source_column, T coefficient) {
   if (!IsEmpty()) {
     AddColumnToOther(target_column, source_column, coefficient, 0, dim_ - 1);
   }
 }
 
 template<class T>
-void SquareMatrix<T>::AddColumnToOther(size_t target_column, size_t source_column, T coefficient,
-                                       size_t begin, size_t end) {
-  if (begin >= dim_ || end >= dim_) {
+void SquareMatrix<T>::AddColumnToOther(int32_t target_column, int32_t source_column, T coefficient,
+                                       int32_t begin, int32_t end) {
+  if (begin < 0 || end < 0 || begin >= dim_ || end >= dim_) {
     throw std::out_of_range("Invalid AddColumnToOther() range");
   }
 
-  if (target_column >= data_.size() || source_column >= data_.size()) {
+  if (target_column < 0 || source_column < 0 ||
+      target_column >= data_.size() || source_column >= data_.size()) {
     throw std::out_of_range("AddColumnToOther(): Invalid column index");
   }
 
-  for (size_t index = begin; index <= end; ++index) {
+  for (int32_t index = begin; index <= end; ++index) {
     data_[index][target_column] += coefficient * data_[index][source_column];
   }
 }
 
 template<class T>
-void SquareMatrix<T>::SwapRows(size_t first_row, size_t second_row) {
+void SquareMatrix<T>::SwapRows(int32_t first_row, int32_t second_row) {
+  if (first_row < 0 || second_row < 0 ||
+      first_row >= static_cast<int32_t>(data_.size()) ||
+      second_row >= static_cast<int32_t>(data_.size())) {
+    throw std::out_of_range("SwapRows(): Invalid column index");
+  }
   // std::vector.swap() takes O(1) time
   data_[first_row].swap(data_[second_row]);
 }
 
 template<class T>
-void SquareMatrix<T>::SwapRows(std::vector<size_t> permutation) {
+void SquareMatrix<T>::SwapRows(std::vector<int32_t> permutation) {
   // Empty permutation
   if (permutation.empty()) {
     return;
@@ -222,8 +233,8 @@ void SquareMatrix<T>::SwapRows(std::vector<size_t> permutation) {
     throw std::invalid_argument(invalid_permutation_message +
         "Matrix dimension and permutation length don't match");
   }
-  std::unordered_map<size_t, size_t> index_of(dim_);
-  for (size_t index = 0; index < permutation.size(); ++index) {
+  std::unordered_map<int32_t, int32_t> index_of(dim_);
+  for (int32_t index = 0; index < permutation.size(); ++index) {
     if (index_of.count(permutation[index])) {
       throw std::invalid_argument(invalid_permutation_message);
     }
@@ -236,9 +247,9 @@ void SquareMatrix<T>::SwapRows(std::vector<size_t> permutation) {
 
   // Smart in-place swaps
   // O(n) time, O(1) memory
-  std::unordered_set<size_t> indices_left(permutation.begin(), permutation.end());
-  size_t insert_index = 0;
-  for (size_t operation = 0; operation < dim_; ++operation) {
+  std::unordered_set<int32_t> indices_left(permutation.begin(), permutation.end());
+  int32_t insert_index = 0;
+  for (int32_t operation = 0; operation < dim_; ++operation) {
     if (insert_index != permutation[insert_index]) {
       // Constant complexity swap
       data_[insert_index].swap(data_[permutation[insert_index]]);
@@ -257,15 +268,20 @@ void SquareMatrix<T>::SwapRows(std::vector<size_t> permutation) {
 }
 
 template<class T>
-void SquareMatrix<T>::SwapColumns(size_t first_column, size_t second_column) {
+void SquareMatrix<T>::SwapColumns(int32_t first_column, int32_t second_column) {
+  if (first_column < 0 || second_column < 0 ||
+      first_column >= data_.size() || second_column >= data_.size()) {
+    throw std::out_of_range("SwapRows(): Invalid column index");
+  }
+
   std::vector<T> buffer;
   buffer.reserve(dim_);
-  for (size_t row_index = 0; row_index <= dim_; ++row_index) {
+  for (int32_t row_index = 0; row_index <= dim_; ++row_index) {
     buffer.push_back(data_[row_index][first_column]);
     data_[row_index][first_column] = data_[row_index][second_column];
   }
 
-  for (size_t row_index = 0; row_index < dim_; ++row_index) {
+  for (int32_t row_index = 0; row_index < dim_; ++row_index) {
     data_[row_index][second_column] = buffer[row_index];
   }
 }
@@ -275,10 +291,10 @@ void SquareMatrix<T>::Transpose() {
   std::vector<std::vector<T>> transposed;
   transposed.reserve(dim_);
 
-  for (size_t column = 0; column < dim_; ++column) {
+  for (int32_t column = 0; column < dim_; ++column) {
     std::vector<T> line;
     line.reserve(dim_);
-    for (size_t row = 0; row < dim_; ++row) {
+    for (int32_t row = 0; row < dim_; ++row) {
       line.push_back(data_[row][column]);
     }
     transposed.push_back(line);
@@ -287,7 +303,7 @@ void SquareMatrix<T>::Transpose() {
 }
 
 template<class T>
-size_t SquareMatrix<T>::GetDim() const {
+int32_t SquareMatrix<T>::GetDim() const {
   return dim_;
 }
 
@@ -299,7 +315,7 @@ bool SquareMatrix<T>::IsEmpty() const {
 template<class T>
 void SquareMatrix<T>::EnsureMatrixStructure() const {
   for (const auto& row : data_) {
-    if (row.size() != dim_) {
+    if (static_cast<int32_t>(row.size()) != dim_) {
       throw std::invalid_argument("Invalid matrix structure");
     }
   }
@@ -314,11 +330,11 @@ SquareMatrix<M> operator*(const SquareMatrix<M>& lhs, const SquareMatrix<M>& rhs
   data.reserve(lhs.dim_);
 
   std::vector<M> line;
-  for (size_t row = 0; row < lhs.dim_; ++row) {
+  for (int32_t row = 0; row < lhs.dim_; ++row) {
     line.clear();
-    for (size_t column = 0; column < rhs.dim_; ++column) {
+    for (int32_t column = 0; column < rhs.dim_; ++column) {
       M sum = M();
-      for (size_t index = 0; index < lhs.dim_; ++index) {
+      for (int32_t index = 0; index < lhs.dim_; ++index) {
         sum += lhs[row][index] * rhs[index][column];
       }
       line.push_back(sum);

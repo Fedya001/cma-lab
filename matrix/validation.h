@@ -29,17 +29,17 @@ bool CheckLogicErrorExceptionThrown(Function function) {
 template<class T>
 void ValidateDlU(const DLUDecomposition<T>& decomposition,
                  const SquareMatrix<T>& matrix) {
-  size_t dim = matrix.GetDim();
+  int32_t dim = matrix.GetDim();
 
-  std::vector<size_t> inverse_permutation(dim);
-  for (size_t index = 0; index < dim; ++index) {
+  std::vector<int32_t> inverse_permutation(dim);
+  for (int32_t index = 0; index < dim; ++index) {
     inverse_permutation[decomposition.rows_permutations[index]] = index;
   }
 
-  for (size_t row = 0; row < dim; ++row) {
-    for (size_t column = 0; column < dim; ++column) {
+  for (int32_t row = 0; row < dim; ++row) {
+    for (int32_t column = 0; column < dim; ++column) {
       T sum = T();
-      for (size_t index = 0; index <= std::min(row, column); ++index) {
+      for (int32_t index = 0; index <= std::min(row, column); ++index) {
         auto low_element = decomposition.low_up[row][index];
         if (index == row) {
           low_element = 1;
@@ -57,11 +57,11 @@ void ValidateDlU(const DLUDecomposition<T>& decomposition,
 template<class T>
 void ValidateLDLT(const LDLTDecomposition<T>& decomposition,
                   const SquareMatrix<T>& matrix) {
-  size_t dim = matrix.GetDim();
-  for (size_t row = 0; row < dim; ++row) {
-    for (size_t column = 0; column < dim; ++column) {
+  int32_t dim = matrix.GetDim();
+  for (int32_t row = 0; row < dim; ++row) {
+    for (int32_t column = 0; column < dim; ++column) {
       T sum = T();
-      for (size_t index = 0; index <= std::min(row, column); ++index) {
+      for (int32_t index = 0; index <= std::min(row, column); ++index) {
         sum += decomposition.low[row][index] * decomposition.low[column][index]
             * decomposition.diagonal[index];
       }
@@ -78,9 +78,9 @@ void ValidateLowdiagInverse(const SquareMatrix<T>& inverse,
                             const SquareMatrix<T>& matrix) {
   const auto result = inverse * matrix; // identity expected
 
-  size_t dim = matrix.GetDim();
-  for (size_t row = 0; row < dim; ++row) {
-    for (size_t column = 0; column < dim; ++column) {
+  int32_t dim = matrix.GetDim();
+  for (int32_t row = 0; row < dim; ++row) {
+    for (int32_t column = 0; column < dim; ++column) {
       T diff = result[row][column];
       if (row == column) {
         diff -= T(1);
@@ -94,11 +94,11 @@ void ValidateLowdiagInverse(const SquareMatrix<T>& inverse,
 
 template<class T>
 void ValidateSystemSolution(const std::vector<T> solution, const System<T>& system) {
-  size_t dim = system.first.GetDim();
+  int32_t dim = system.first.GetDim();
 
-  for (size_t row = 0; row < dim; ++row) {
+  for (int32_t row = 0; row < dim; ++row) {
     T sum = T();
-    for (size_t column = 0; column < dim; ++column) {
+    for (int32_t column = 0; column < dim; ++column) {
       sum += solution[column] * system.first[row][column];
     }
     if (std::abs(sum - system.second[row]) > EPSILON) {
@@ -133,7 +133,7 @@ bool TestAll() {
 
     // 3. // Random tests on DLU and LDLT
     MatrixFactory<T> matrix_factory(-1000, 1000);
-    for (size_t dim : {10, 20, 50, 100}) {
+    for (int32_t dim : {10, 20, 50, 100}) {
       auto matrix = matrix_factory.CreateRandomMatrix(dim, false);
       manager.SetMatrix(matrix);
       ValidateDlU(manager.PerformDLU(true), matrix);
@@ -156,7 +156,7 @@ bool TestAll() {
       }
     }
 
-    for (size_t dim : {10, 20, 50}) {
+    for (int32_t dim : {10, 20, 50}) {
       auto matrix = matrix_factory.CreateLowdiagMatrix(dim);
       manager.SetMatrix(matrix);
       ValidateLowdiagInverse(manager.InverseLowdiag(true), matrix);
@@ -169,7 +169,7 @@ bool TestAll() {
     }
 
     // Random tests (symmetric and non-symmetric systems)
-    for (size_t dim : {10, 20, 50, 100}) {
+    for (int32_t dim : {10, 20, 50, 100}) {
       auto matrix = matrix_factory.CreateRandomMatrix(dim);
       auto symmetric_matrix = matrix_factory.CreateRandomMatrix(dim, true);
       auto column = matrix_factory.CreateRandomVector(dim);

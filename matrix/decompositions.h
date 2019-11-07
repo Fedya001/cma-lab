@@ -15,9 +15,9 @@ struct LDLTDecomposition {
 
 template<class T>
 void LDLTDecomposition<T>::MultiplyDiagonal() {
-  size_t dim = low.GetDim();
-  for (size_t row = 0; row < dim; ++row) {
-    for (size_t column = 0; column < dim; ++column) {
+  int32_t dim = low.GetDim();
+  for (int32_t row = 0; row < dim; ++row) {
+    for (int32_t column = 0; column < dim; ++column) {
       low[row][column] *= diagonal[column];
     }
   }
@@ -25,6 +25,6 @@ void LDLTDecomposition<T>::MultiplyDiagonal() {
 
 template<class T>
 struct DLUDecomposition {
-  std::vector<size_t> rows_permutations;
+  std::vector<int32_t> rows_permutations;
   SquareMatrix<T> low_up;
 };

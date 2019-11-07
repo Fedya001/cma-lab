@@ -70,7 +70,7 @@ template<class T>
 LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
   EnsureMatrixType(MatrixType::SYMMETRIC);
 
-  size_t dim = matrix_.GetDim();
+  int32_t dim = matrix_.GetDim();
   std::vector<int8_t> diagonal(dim, 1);
   SquareMatrix<T> matrix = matrix_;
 
@@ -79,19 +79,19 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
   // takes O(n^3 / 2) that is why there is no problem
   std::vector<std::vector<T>> transposed;
 
-  for (size_t iteration = 0; iteration < dim; ++iteration) {
+  for (int32_t iteration = 0; iteration < dim; ++iteration) {
     if (matrix[iteration][iteration] == 0) {
       throw std::logic_error("Unable to perform LDLT decomposition.");
     }
 
-    for (size_t row = iteration + 1; row < dim; ++row) {
+    for (int32_t row = iteration + 1; row < dim; ++row) {
       auto coefficient = -matrix[iteration][row] / matrix[iteration][iteration];
       matrix.AddRowToOther(row, iteration, coefficient, row, dim - 1);
     }
 
     // Form a row of resulting matrix low
     std::vector<T> row;
-    for (size_t index = 0; index <= iteration; ++index) {
+    for (int32_t index = 0; index <= iteration; ++index) {
       row.push_back(matrix[index][iteration]);
     }
     row.resize(dim, T(0));
@@ -99,13 +99,13 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
   }
 
   // Finish LDLT: Divide on square root
-  for (size_t column = 0; column < dim; ++column) {
+  for (int32_t column = 0; column < dim; ++column) {
     if (transposed[column][column] < 0) {
       diagonal[column] = -1;
     }
     T root = sqrt(diagonal[column] * matrix[column][column]);
 
-    for (size_t row = 0; row < dim; ++row) {
+    for (int32_t row = 0; row < dim; ++row) {
       transposed[row][column] /= diagonal[column] * root;
     }
   }
@@ -116,16 +116,16 @@ LDLTDecomposition<T> SquareMatrixManager<T>::PerformLDLT() const {
 template<class T>
 DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
   SquareMatrix<T> low_up = matrix_;
-  std::vector<std::pair<size_t, size_t>> swaps;
+  std::vector<std::pair<int32_t, int32_t>> swaps;
 
   // TODO: measure time from this point (@flipper)
-  size_t dim = matrix_.GetDim();
-  for (size_t iteration = 0; iteration < dim; ++iteration) {
+  int32_t dim = matrix_.GetDim();
+  for (int32_t iteration = 0; iteration < dim; ++iteration) {
 
     if (swap_rows) {
-      size_t max_index = iteration;
+      int32_t max_index = iteration;
       // Search for max element
-      for (size_t index = iteration + 1; index < dim; ++index) {
+      for (int32_t index = iteration + 1; index < dim; ++index) {
         if (std::abs(low_up[max_index][iteration]) < std::abs(low_up[index][iteration])) {
           max_index = index;
         }
@@ -156,14 +156,14 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
 
 
       // 2. Up matrix
-      for (size_t row = iteration + 1; row < dim; ++row) {
+      for (int32_t row = iteration + 1; row < dim; ++row) {
         low_up.AddRowToOther(row, iteration, -low_up[row][iteration],
                              iteration + 1, dim - 1);
       }
     }
   }
 
-  std::vector<size_t> rows_permutations(dim);
+  std::vector<int32_t> rows_permutations(dim);
   std::iota(rows_permutations.begin(), rows_permutations.end(), 0);
 
   std::reverse(swaps.begin(), swaps.end());
@@ -177,7 +177,7 @@ DLUDecomposition<T> SquareMatrixManager<T>::PerformDLU(bool swap_rows) const {
 template<class T>
 SquareMatrix<T> SquareMatrixManager<T>::InverseLowdiag(bool swap_rows) const {
   EnsureMatrixType(MatrixType::LOWDIAG);
-  size_t dim = matrix_.GetDim();
+  int32_t dim = matrix_.GetDim();
 
   SquareMatrix<T> left_matrix = matrix_;
   SquareMatrix<T> inverse = MatrixFactory<T>::CreateIdentity(dim);
@@ -186,10 +186,7 @@ SquareMatrix<T> SquareMatrixManager<T>::InverseLowdiag(bool swap_rows) const {
   const double epsilon = 1e-6;
 
   // Step 1. Go up and make zeros on odd diagonal
-  for (size_t iter = 0; iter < dim; ++iter) {
-    // Smells bad, I know. Suggest a fix, please
-    size_t iteration = dim - iter - 1;
-
+  for (int32_t iteration = dim - 1; iteration >= 0; --iteration) {
     if (swap_rows) {
       if (iteration != 0 && std::abs(left_matrix[iteration][iteration]) <
           std::abs(left_matrix[iteration - 1][iteration])) {
@@ -218,11 +215,11 @@ SquareMatrix<T> SquareMatrixManager<T>::InverseLowdiag(bool swap_rows) const {
 
   // Step 2. Go down and make matrix a diagonal
   // There are already a_{ii} = 1 \forall i \in \overline{0, dim - 1}
-  for (size_t iteration = 0; iteration < dim; ++iteration) {
+  for (int32_t iteration = 0; iteration < dim; ++iteration) {
     if (std::abs(left_matrix[iteration][iteration] - T(1)) > epsilon) {
       throw std::logic_error(message + " Matrix is degenerate.");
     }
-    for (size_t row = iteration + 1; row < dim; ++row) {
+    for (int32_t row = iteration + 1; row < dim; ++row) {
       inverse.AddRowToOther(row, iteration, -left_matrix[row][iteration]);
     }
   }
@@ -234,7 +231,7 @@ template<class T>
 std::vector<T> SquareMatrixManager<T>::SolveSystem(std::vector<T> result,
                                                    MatrixType matrix_type) const {
   EnsureMatrixType(matrix_type);
-  size_t dim = matrix_.GetDim();
+  int32_t dim = matrix_.GetDim();
 
   switch (matrix_type) {
     case MatrixType::UPPER_TRIANGULAR:return SolveUpperSystem(matrix_, result);
@@ -254,21 +251,21 @@ std::vector<T> SquareMatrixManager<T>::SolveSystem(std::vector<T> result,
       std::vector<T> upper_diagonal;
       upper_diagonal.reserve(dim);
       // Transform to lower-diagonal (substitute zeros)
-      for (size_t index = 0; index < dim; ++index) {
+      for (int32_t index = 0; index < dim; ++index) {
         upper_diagonal.push_back(decomposition.low_up[index][index]);
         decomposition.low_up[index][index] = T(1);
       }
 
       // Multiply result on inverse permutation
       std::vector<T> permutation(dim);
-      for (size_t index = 0; index < dim; ++index) {
+      for (int32_t index = 0; index < dim; ++index) {
         permutation[decomposition.rows_permutations[index]] = result[index];
       }
 
       result = SolveLowerSystem(decomposition.low_up, permutation);
 
       // return back to upper diagonal
-      for (size_t index = 0; index < dim; ++index) {
+      for (int32_t index = 0; index < dim; ++index) {
         decomposition.low_up[index][index] = upper_diagonal[index];
       }
       return SolveUpperSystem(decomposition.low_up, result);
@@ -278,32 +275,32 @@ std::vector<T> SquareMatrixManager<T>::SolveSystem(std::vector<T> result,
 
 template<class T>
 void SquareMatrixManager<T>::EnsureMatrixType(MatrixType matrix_type) const {
-  std::function<bool(size_t, size_t)> validate_function;
+  std::function<bool(int32_t, int32_t)> validate_function;
   std::string message;
 
   switch (matrix_type) {
     case MatrixType::SYMMETRIC:
-      validate_function = [this](size_t i, size_t j) { return matrix_[i][j] == matrix_[j][i]; };
+      validate_function = [this](int32_t i, int32_t j) { return matrix_[i][j] == matrix_[j][i]; };
       message = "Invalid matrix structure (symmetric matrix required)";
       break;
     case MatrixType::UPPER_TRIANGULAR:
-      validate_function = [this](size_t i, size_t j) { return j >= i || matrix_[i][j] == 0; };
+      validate_function = [this](int32_t i, int32_t j) { return j >= i || matrix_[i][j] == 0; };
       message = "Invalid matrix structure (upper triangular matrix required)";
       break;
     case MatrixType::LOWER_TRIANGULAR:
-      validate_function = [this](size_t i, size_t j) { return i >= j || matrix_[i][j] == 0; };
+      validate_function = [this](int32_t i, int32_t j) { return i >= j || matrix_[i][j] == 0; };
       message = "Invalid matrix structure (lower triangular matrix required)";
       break;
     case MatrixType::LOWDIAG:
-      validate_function = [this](size_t i, size_t j) { return i + 1 >= j || matrix_[i][j] == 0; };
+      validate_function = [this](int32_t i, int32_t j) { return i + 1 >= j || matrix_[i][j] == 0; };
       message = "Invalid matrix structure (lowdiag matrix required)";
       break;
     default:return;
   }
 
-  size_t dim = matrix_.GetDim();
-  for (size_t row = 0; row < dim; ++row) {
-    for (size_t column = 0; column < dim; ++column) {
+  int32_t dim = matrix_.GetDim();
+  for (int32_t row = 0; row < dim; ++row) {
+    for (int32_t column = 0; column < dim; ++column) {
       if (!validate_function(row, column)) {
         throw std::invalid_argument(message);
       }
@@ -317,15 +314,15 @@ std::vector<T> SquareMatrixManager<T>::SolveLowerSystem(
     std::vector<T> result,
     const std::string& error_message
 ) const {
-  size_t dim = lower.GetDim();
+  int32_t dim = lower.GetDim();
 
-  for (size_t iteration = 0; iteration < dim; ++iteration) {
+  for (int32_t iteration = 0; iteration < dim; ++iteration) {
     if (lower[iteration][iteration] == 0) {
       throw std::logic_error(error_message);
     }
 
     result[iteration] /= lower[iteration][iteration];
-    for (size_t row = iteration + 1; row < dim; ++row) {
+    for (int32_t row = iteration + 1; row < dim; ++row) {
       result[row] -= lower[row][iteration] * result[iteration];
     }
   }
@@ -338,16 +335,15 @@ std::vector<T> SquareMatrixManager<T>::SolveUpperSystem(
     std::vector<T> result,
     const std::string& error_message
 ) const {
-  size_t dim = upper.GetDim();
+  int32_t dim = upper.GetDim();
 
-  for (size_t iter = 0; iter < dim; ++iter) {
-    size_t iteration = dim - iter - 1;
+  for (int32_t iteration = dim - 1; iteration >= 0; --iteration) {
     if (upper[iteration][iteration] == 0) {
       throw std::logic_error(error_message);
     }
 
     result[iteration] /= upper[iteration][iteration];
-    for (size_t row = 0; row < iteration; ++row) {
+    for (int32_t row = 0; row < iteration; ++row) {
       result[row] -= upper[row][iteration] * result[iteration];
     }
   }

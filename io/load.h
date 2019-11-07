@@ -26,13 +26,13 @@ std::vector<std::string> ListFiles(const std::string& directory_path);
 
 template<class T>
 SquareMatrix<T> LoadMatrix(std::istream& input) {
-  size_t dim;
+  int32_t dim;
   input >> dim;
 
   T element;
   SquareMatrix<T> matrix(dim);
-  for (size_t row = 0; row < dim; ++row) {
-    for (size_t column = 0; column < dim; ++column) {
+  for (int32_t row = 0; row < dim; ++row) {
+    for (int32_t column = 0; column < dim; ++column) {
       input >> element;
       matrix[row][column] = element;
     }
@@ -43,7 +43,7 @@ SquareMatrix<T> LoadMatrix(std::istream& input) {
 
 template<class T>
 std::vector<T> LoadVector(std::istream& input) {
-  size_t dim;
+  int32_t dim;
   input >> dim;
 
   std::vector<T> vector(dim);
