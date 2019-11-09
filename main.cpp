@@ -9,6 +9,7 @@ int main() {
   }
 
   report::LatexSolutions("latex/solutions.tex");
+  report::DumpMeasurements("measurements/measurements.txt");
 
   return 0;
 }

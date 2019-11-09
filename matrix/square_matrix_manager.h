@@ -259,7 +259,7 @@ void SquareMatrixManager<T>::EnsureMatrixType(MatrixType matrix_type) const {
 
   switch (matrix_type) {
     case MatrixType::SYMMETRIC:
-      validate_function = [this](int32_t i, int32_t j) { return matrix_[i][j] == matrix_[j][i]; };
+      validate_function = [this](int32_t i, int32_t j) { return std::abs(matrix_[i][j] - matrix_[j][i]) < 1e-4; };
       message = "Invalid matrix structure (symmetric matrix required)";
       break;
     case MatrixType::UPPER_TRIANGULAR:

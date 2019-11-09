@@ -6,6 +6,7 @@
 #include "relaxation.h"
 #include "square_matrix.h"
 #include "square_matrix_manager.h"
+#include "vector_utils.h"
 #include "time_measurer.h"
 
 #include <chrono>
@@ -165,6 +166,117 @@ void LatexSolutions(const std::string& output_tex_file) {
 
   output << "\\end{enumerate}\n";
   EndDocument(output);
+}
+
+void DumpMeasurements(const std::string& measurements_dump_file) {
+  filesystem::create_directories(filesystem::path(measurements_dump_file).parent_path());
+
+  const std::vector<std::string> task_names = {
+      "Task1. Lowdiag inverse",
+      "Task2. LU decomposition",
+      "Task3. Compare LU and LDL^T",
+      "Task4. Sweep method",
+      "Task5. Relaxation method"
+  };
+
+  std::ofstream measurements_dump(measurements_dump_file);
+  std::vector<int64_t> measurements;
+
+  TimeMeasurer<std::chrono::milliseconds> measurer;
+  MatrixFactory<DoubleType> matrix_factory
+      (-RANDOM_GENERATOR_RADIUS, RANDOM_GENERATOR_RADIUS);
+  SquareMatrixManager<DoubleType> manager(SquareMatrix<DoubleType>(0));
+
+  // Explore tasks (i.e. measure execution time and other characteristics)
+  // TODO: test with long double and float types
+
+  // Task1. Lowdiag inverse
+  {
+    int64_t execution_time;
+    int32_t size = SIZE_LEAP;
+
+    std::cerr << task_names[0] << std::endl;
+    measurements_dump << task_names[0] << std::endl;
+    do {
+      manager.SetMatrix(matrix_factory.CreateLowdiagMatrix(size));
+      measurer.UpdateTimeStamp();
+      (void) manager.InverseLowdiag();
+      measurements.push_back(execution_time = measurer.GetElapsedTime());
+      size += SIZE_LEAP;
+      std::cerr << size << " : " << execution_time << std::endl;
+    } while (execution_time < MILLISECONDS_THRESHOLD);
+    PrintVector(measurements_dump, measurements, ", ");
+  }
+
+  // Task2. LU decomposition
+  {
+    std::cerr << task_names[1] << std::endl;
+    measurements_dump << task_names[1] << std::endl;
+
+    auto system = loader::LoadSystem<DoubleType>("../data/task2/sampleB.data");
+    manager.SetMatrix(system.first);
+    auto original_solution = manager.SolveSystem(system.second);
+
+    measurements_dump << "Original solution: ";
+    PrintRow(measurements_dump, original_solution);
+    measurements_dump << std::endl;
+
+    measurements_dump << std::fixed << std::setprecision(6);
+    for (DoubleType noise_radius : {0.001, 0.01, 0.1, 0.5, 1.0, 5.0, 10.0, 20.0}) {
+      measurements_dump << "noise_radius = " << noise_radius << " => ";
+      auto noise_vector = NoiseVector(system.second, noise_radius);
+      measurements_dump << "noise_vector_norm = " << GetDiffEuclidNorm(system.second, noise_vector);
+      auto solution = manager.SolveSystem(noise_vector);
+      measurements_dump << " => solution_noise = " << GetDiffEuclidNorm(original_solution, solution) << std::endl;
+    }
+  }
+
+  // Task3. Compare LU and LDL^T
+  {
+    std::cerr << task_names[2] << std::endl;
+    measurements_dump << task_names[2] << std::endl;
+
+    measurements.clear();
+    std::vector<int64_t> symmetric_measurements;
+    for (int32_t size = 100; size <= 2000; size += 100) {
+      auto matrix = matrix_factory.CreateRandomMatrix(size, true);
+      manager.SetMatrix(matrix);
+      auto vector = matrix_factory.CreateRandomVector(size);
+
+      measurer.UpdateTimeStamp();
+      (void) manager.SolveSystem(
+          vector, SquareMatrixManager<DoubleType>::MatrixType::ORDINARY);
+      measurements.push_back(measurer.GetElapsedTime());
+
+      measurer.UpdateTimeStamp();
+      (void) manager.SolveSystem(
+          vector, SquareMatrixManager<DoubleType>::MatrixType::SYMMETRIC);
+      symmetric_measurements.push_back(measurer.GetElapsedTime());
+    }
+    PrintVector(measurements_dump, measurements, ", ");
+    PrintVector(measurements_dump, symmetric_measurements, ", ");
+  }
+
+  // Task5. Relaxation method
+  {
+    const int32_t testing_size = 100'000'000;
+
+    std::cerr << task_names[4] << std::endl;
+    measurements_dump << task_names[4] << std::endl;
+
+    std::vector<int32_t> itetaions_number;
+    std::vector<long double> omega_values;
+
+    long double omega = 0.0;
+    while (omega <= 2.0) {
+      omega_values.push_back(omega);
+      itetaions_number.push_back(std::get<3>(SolveSystem(testing_size, omega)));
+      omega += 0.2;
+    }
+    PrintVector(measurements_dump, omega_values, ", ");
+    measurements_dump << std::endl;
+    PrintVector(measurements_dump, itetaions_number, ", ");
+  }
 }
 
 } // namespace report
