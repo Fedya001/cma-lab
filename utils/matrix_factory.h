@@ -1,5 +1,7 @@
 #pragma once
 
+#include "square_matrix.h"
+
 #include <chrono>
 #include <random>
 

@@ -1,8 +1,5 @@
-#include "relaxation.h"
 #include "validation.h"
-#include "print_utils.h"
-
-#include <iostream>
+#include "report.h"
 
 int main() {
   if (validation::TestAll<double>()) {
@@ -11,7 +8,7 @@ int main() {
     std::cerr << "Some tests failed\n";
   }
 
-  PrintRow(std::cout, SolveSystem(5, 0.1));
+  report::LatexSolutions("latex/solutions.tex");
 
   return 0;
 }
