@@ -25,18 +25,20 @@ T ComputeDiffEuclidNorm(int32_t size, const std::tuple<T, T, T>& lhs, const std:
   );
 }
 
+// Returns solution + number of iterations
 template<class T>
-std::tuple<T, T, T> SolveSystem(int32_t size, T omega, T accuracy = T(1e-9)) {
+std::tuple<T, T, T, int32_t> SolveSystem(int32_t size, T omega, T accuracy = T(1e-9)) {
   if (size <= 0) {
     throw std::logic_error("Size of the system must be positive");
   }
 
   if (size == 1) {
-    return {T(1), T(1), T(1)};
+    return {T(1), T(1), T(1), 0};
   }
 
   std::tuple<T, T, T> current{0, 0, 0}, next{0, 0, 0};
 
+  int32_t number_of_iterations = 0;
   T one_minus_omega = T(1) - omega;
   do {
     std::get<0>(next) = one_minus_omega * std::get<0>(current) + omega *
@@ -46,7 +48,8 @@ std::tuple<T, T, T> SolveSystem(int32_t size, T omega, T accuracy = T(1e-9)) {
     std::get<2>(next) = one_minus_omega * std::get<2>(current) + omega *
         (T(1) - std::get<0>(next) - (size - 2) * std::get<1>(next)) / size;
     current.swap(next);
+    ++number_of_iterations;
   } while (ComputeDiffEuclidNorm(size, current, next) > accuracy);
-  return current;
+  return std::tuple_cat(current, std::tie(number_of_iterations));
 }
 
