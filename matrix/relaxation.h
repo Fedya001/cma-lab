@@ -17,44 +17,36 @@
 // using relaxation method with omega parameter
 
 template<class T>
-T ComputeDiffEuclidNorm(const std::vector<T>& lhs, const std::vector<T>& rhs) {
-  if (lhs.size() != rhs.size()) {
-    throw std::logic_error("Vector sizes must be equal");
-  }
-
-  T sum = T();
-  for (int32_t index = 0; index < static_cast<int32_t>(lhs.size()); ++index) {
-    auto diff = lhs[index] - rhs[index];
-    sum += diff * diff;
-  }
-  return std::sqrt(sum);
+T ComputeDiffEuclidNorm(int32_t size, const std::tuple<T, T, T>& lhs, const std::tuple<T, T, T>& rhs) {
+  return std::sqrt(
+      std::pow((std::get<0>(lhs) - std::get<0>(rhs)), 2.0) +
+      std::pow((std::get<1>(lhs) - std::get<1>(rhs)), 2.0) * (size - 2) +
+      std::pow((std::get<2>(lhs) - std::get<2>(rhs)), 2.0)
+  );
 }
 
 template<class T>
-std::vector<T> SolveSystem(int32_t size, T omega, T accuracy = T(1e-9)) {
+std::tuple<T, T, T> SolveSystem(int32_t size, T omega, T accuracy = T(1e-9)) {
   if (size <= 0) {
     throw std::logic_error("Size of the system must be positive");
   }
 
   if (size == 1) {
-    return {T(1)};
+    return {T(1), T(1), T(1)};
   }
 
-  std::vector<T> current(size, T(0)), next(size);
+  std::tuple<T, T, T> current{0, 0, 0}, next{0, 0, 0};
 
   T one_minus_omega = T(1) - omega;
   do {
-    next[0] = one_minus_omega * current[0] + omega *
-        (T(1) - std::accumulate(current.begin() + 1, current.end(), T())) / size;
-    for (int32_t index = 1; index < size - 1; ++index) {
-      next[index] = one_minus_omega * current[index] + omega *
-          (T(1) - next[0] - current[size - 1]) / size;
-    }
-    next[size - 1] = one_minus_omega * current[size - 1] + omega *
-        (T(1) - std::accumulate(next.begin(), next.end() - 1, T())) / size;
-
+    std::get<0>(next) = one_minus_omega * std::get<0>(current) + omega *
+        (T(1) - (size - 2) * std::get<1>(current) - std::get<2>(current)) / size;
+    std::get<1>(next) = one_minus_omega * std::get<1>(current) + omega *
+        (T(1) - std::get<0>(next) - std::get<2>(current)) / size;
+    std::get<2>(next) = one_minus_omega * std::get<2>(current) + omega *
+        (T(1) - std::get<0>(next) - (size - 2) * std::get<1>(next)) / size;
     current.swap(next);
-  } while (ComputeDiffEuclidNorm(current, next) > accuracy);
+  } while (ComputeDiffEuclidNorm(size, current, next) > accuracy);
   return current;
 }
 
