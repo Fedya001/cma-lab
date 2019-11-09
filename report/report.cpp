@@ -270,7 +270,7 @@ void DumpMeasurements(const std::string& measurements_dump_file) {
     long double omega = 0.0;
     while (omega <= 2.0) {
       omega_values.push_back(omega);
-      itetaions_number.push_back(std::get<3>(SolveSystem(testing_size, omega)));
+      itetaions_number.push_back(std::get<3>(SolveSystem<long double>(testing_size, omega)));
       omega += 0.2;
     }
     PrintVector(measurements_dump, omega_values, ", ");
@@ -282,7 +282,7 @@ void DumpMeasurements(const std::string& measurements_dump_file) {
     measurements.clear();
     std::vector<int32_t> sizes = {2, 3, 5, 10, 20, 50, 100, 500, 2000, 5000};
     for (int32_t size : {2, 3, 5, 10, 20, 50, 100, 500, 2000, 5000}) {
-      measurements.push_back(std::get<3>(SolveSystem(size, 1)));
+      measurements.push_back(std::get<3>(SolveSystem<long double>(size, 1)));
     }
     PrintVector(measurements_dump, sizes, ", ");
     measurements_dump << std::endl;
