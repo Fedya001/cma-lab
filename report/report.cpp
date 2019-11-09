@@ -276,6 +276,17 @@ void DumpMeasurements(const std::string& measurements_dump_file) {
     PrintVector(measurements_dump, omega_values, ", ");
     measurements_dump << std::endl;
     PrintVector(measurements_dump, itetaions_number, ", ");
+    measurements_dump << std::endl;
+
+    // Build graphics with omega = 1
+    measurements.clear();
+    std::vector<int32_t> sizes = {2, 3, 5, 10, 20, 50, 100, 500, 2000, 5000};
+    for (int32_t size : {2, 3, 5, 10, 20, 50, 100, 500, 2000, 5000}) {
+      measurements.push_back(std::get<3>(SolveSystem(size, 1)));
+    }
+    PrintVector(measurements_dump, sizes, ", ");
+    measurements_dump << std::endl;
+    PrintVector(measurements_dump, measurements, ", ");
   }
 }
 
