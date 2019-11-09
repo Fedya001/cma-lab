@@ -57,7 +57,7 @@ ThreeDiagonalMatrix<T> LoadThreeDiagonalMatrix(std::istream& input) {
       data.push_back(row);
     }
 
-    input >> boundary_row[1] >> boundary_row[2];
+    input >> boundary_row[0] >> boundary_row[1];
     boundary_row[2] = T();
     data.push_back(boundary_row);
 
