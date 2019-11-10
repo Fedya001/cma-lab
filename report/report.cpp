@@ -267,7 +267,7 @@ void DumpMeasurements(const std::string& measurements_dump_file) {
     std::vector<int32_t> itetaions_number;
     std::vector<long double> omega_values;
 
-    long double omega = 0.0;
+    long double omega = 0.2;
     while (omega <= 2.0) {
       omega_values.push_back(omega);
       itetaions_number.push_back(std::get<3>(SolveSystem<long double>(testing_size, omega)));
